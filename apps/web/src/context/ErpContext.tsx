@@ -238,7 +238,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAuditLogs(chain);
 
         // Invoices
-        const initialInvoices = [
+        const initialInvoices: Invoice[] = [
           {
             id: 'inv-401',
             vendorName: 'AWS Enterprise Cloud',
@@ -276,7 +276,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setInvoices(initialInvoices);
 
         // Employees
-        const initialEmployees = [
+        const initialEmployees: Employee[] = [
           {
             id: 'emp-101',
             name: 'Rohith Raj',
@@ -329,7 +329,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setEmployees(initialEmployees);
 
         // Inventory
-        const initialInventory = [
+        const initialInventory: InventoryItem[] = [
           { id: 'inv-1', name: 'Optic Fiber Transceiver 10G', sku: 'OPT-10G-LR', category: 'Hardware', quantity: 145, minStockLevel: 50, reorderQuantity: 200, unitPrice: 85.00, supplier: 'Cisco Systems', status: 'In Stock' },
           { id: 'inv-2', name: 'Kubernetes Master Node Servers', sku: 'SRV-DL360-G11', category: 'Servers', quantity: 8, minStockLevel: 10, reorderQuantity: 15, unitPrice: 4200.00, supplier: 'HPE', status: 'Low Stock' },
           { id: 'inv-3', name: 'Encrypted Hardware Security Module', sku: 'HSM-AES256-Y', category: 'Security', quantity: 0, minStockLevel: 5, reorderQuantity: 10, unitPrice: 8900.00, supplier: 'Yubico', status: 'Out of Stock' },
@@ -338,7 +338,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setInventory(initialInventory);
 
         // Purchase Orders
-        const initialPOs = [
+        const initialPOs: PurchaseOrder[] = [
           {
             id: 'PO-301',
             poNumber: 'PO-2026-0001',
@@ -370,7 +370,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setPurchaseOrders(initialPOs);
 
         // Projects
-        const initialProjects = [
+        const initialProjects: ErpProject[] = [
           {
             id: 'proj-1',
             name: 'AI Forecast Module Integration',
@@ -405,7 +405,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProjects(initialProjects);
 
         // Notifications
-        const initialNotifications = [
+        const initialNotifications: NotificationLog[] = [
           { id: 'n-1', timestamp: '2026-06-21T13:42:00.000Z', type: 'In-app', recipient: 'admin@amdox.io', message: 'Low inventory alert: Kubernetes Master Node Servers quantity below threshold.', status: 'Success', attempts: 1 },
           { id: 'n-2', timestamp: '2026-06-21T13:45:00.000Z', type: 'Email', recipient: 'rmpatidar98@gmail.com', message: 'Assigned new task: Build LSTM Recurrent Neural Net.', status: 'Success', attempts: 1 },
           { id: 'n-3', timestamp: '2026-06-21T13:48:00.000Z', type: 'Webhook', recipient: 'https://hooks.amdox.io/erp-sync', message: 'Transaction tx-1003 posted to Ledger.', status: 'Success', attempts: 1 }

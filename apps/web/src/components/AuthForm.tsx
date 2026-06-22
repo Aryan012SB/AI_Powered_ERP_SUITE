@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useErp } from '../context/ErpContext';
-import { Lock, Mail, User, Building2, Sparkles, LogIn, UserPlus } from 'lucide-react';
+import { Lock, Mail, User, Building2, LogIn, UserPlus } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
   const { login, register, tenants } = useErp();
