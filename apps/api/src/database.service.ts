@@ -1,42 +1,73 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import Database from 'better-sqlite3';
+import { Pool } from 'pg';
 import * as path from 'path';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
-  private db!: Database.Database;
+  private sqliteDb?: Database.Database;
+  private pgPool?: Pool;
+  private usePostgres = false;
 
-  onModuleInit() {
-    const dbPath = path.resolve(process.cwd(), 'erp_suite.sqlite');
-    console.log(`Initializing SQLite database at: ${dbPath}`);
-    this.db = new Database(dbPath);
+  async onModuleInit() {
+    const dbUrl = process.env.DATABASE_URL;
+    if (dbUrl) {
+      console.log('Connecting to PostgreSQL database using DATABASE_URL...');
+      this.pgPool = new Pool({
+        connectionString: dbUrl,
+        ssl: dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1') ? false : { rejectUnauthorized: false }
+      });
+      this.usePostgres = true;
 
-    // Enforce WAL mode for fast writes and concurrent reads
-    this.db.pragma('journal_mode = WAL');
+      // Verify connection
+      try {
+        const client = await this.pgPool.connect();
+        console.log('Successfully connected to PostgreSQL.');
+        client.release();
+      } catch (err) {
+        console.error('Failed to connect to PostgreSQL:', err);
+        throw err;
+      }
+    } else {
+      const dbPath = path.resolve(process.cwd(), 'erp_suite.sqlite');
+      console.log(`DATABASE_URL not found. Falling back to local SQLite database at: ${dbPath}`);
+      this.sqliteDb = new Database(dbPath);
+      this.sqliteDb.pragma('journal_mode = WAL');
+      this.usePostgres = false;
+    }
 
-    // Create tables if they don't exist
-    this.db.exec(`
+    // Initialize tables
+    await this.initializeTables();
+    await this.seedInitialUsers();
+  }
+
+  private async initializeTables() {
+    const usersTableSql = `
       CREATE TABLE IF NOT EXISTS users (
-        name TEXT NOT NULL,
-        email TEXT PRIMARY KEY,
-        password TEXT NOT NULL,
-        tenantId TEXT NOT NULL
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) PRIMARY KEY,
+        password VARCHAR(255) NOT NULL,
+        tenantId VARCHAR(255) NOT NULL
       );
+    `;
 
+    const erpStateTableSql = `
       CREATE TABLE IF NOT EXISTS erp_state (
-        tenantId TEXT PRIMARY KEY,
+        tenantId VARCHAR(255) PRIMARY KEY,
         data TEXT NOT NULL
       );
-    `);
+    `;
 
-    // Seed default users if users table is empty
-    const usersCount = this.db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-    if (usersCount.count === 0) {
-      console.log('Seeding initial users into SQLite database...');
-      const insertUser = this.db.prepare(
-        'INSERT OR IGNORE INTO users (name, email, password, tenantId) VALUES (?, ?, ?, ?)'
-      );
-      
+    await this.run(usersTableSql);
+    await this.run(erpStateTableSql);
+  }
+
+  private async seedInitialUsers() {
+    const countResult = await this.queryOne<{ count: string | number }>('SELECT COUNT(*) as count FROM users');
+    const count = countResult ? Number(countResult.count) : 0;
+    
+    if (count === 0) {
+      console.log('Seeding initial users...');
       const seedUsers = [
         { name: 'Rohith Raj', email: 'rajuchaswik@gmail.com', password: 'password', tenantId: 't-amdox' },
         { name: 'Prisha Jain', email: 'prishanileshjain@gmail.com', password: 'password', tenantId: 't-amdox' },
@@ -46,18 +77,52 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       ];
 
       for (const u of seedUsers) {
-        insertUser.run(u.name, u.email.toLowerCase(), u.password, u.tenantId);
+        await this.run(
+          'INSERT INTO users (name, email, password, tenantId) VALUES (?, ?, ?, ?) ON CONFLICT (email) DO NOTHING',
+          [u.name, u.email.toLowerCase(), u.password, u.tenantId]
+        );
       }
     }
   }
 
-  onModuleDestroy() {
-    if (this.db) {
-      this.db.close();
+  async onModuleDestroy() {
+    if (this.sqliteDb) {
+      this.sqliteDb.close();
+    }
+    if (this.pgPool) {
+      await this.pgPool.end();
     }
   }
 
-  getDatabase(): Database.Database {
-    return this.db;
+  // Helper to translate "?" query parameter style to "$1", "$2" for Postgres
+  private formatSql(sql: string): string {
+    if (!this.usePostgres) return sql;
+    let index = 1;
+    return sql.replace(/\?/g, () => `$${index++}`);
+  }
+
+  async query<T>(sql: string, params: any[] = []): Promise<T[]> {
+    const formattedSql = this.formatSql(sql);
+    if (this.usePostgres && this.pgPool) {
+      const res = await this.pgPool.query(formattedSql, params);
+      return res.rows as T[];
+    } else if (this.sqliteDb) {
+      return this.sqliteDb.prepare(formattedSql).all(params) as T[];
+    }
+    return [];
+  }
+
+  async queryOne<T>(sql: string, params: any[] = []): Promise<T | undefined> {
+    const rows = await this.query<T>(sql, params);
+    return rows[0];
+  }
+
+  async run(sql: string, params: any[] = []): Promise<void> {
+    const formattedSql = this.formatSql(sql);
+    if (this.usePostgres && this.pgPool) {
+      await this.pgPool.query(formattedSql, params);
+    } else if (this.sqliteDb) {
+      this.sqliteDb.prepare(formattedSql).run(params);
+    }
   }
 }

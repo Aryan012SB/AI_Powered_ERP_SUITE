@@ -13,18 +13,17 @@ export class AuthService {
   constructor(private readonly dbService: DatabaseService) {}
 
   async register(name: string, email: string, password: string, tenantId: string): Promise<Omit<User, 'password'>> {
-    const db = this.dbService.getDatabase();
-    const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase()) as User | undefined;
+    const existingUser = await this.dbService.queryOne<User>('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
     if (existingUser) {
       throw new ConflictException('Email address is already registered');
     }
 
-    db.prepare('INSERT INTO users (name, email, password, tenantId) VALUES (?, ?, ?, ?)').run(
+    await this.dbService.run('INSERT INTO users (name, email, password, tenantId) VALUES (?, ?, ?, ?)', [
       name,
       email.toLowerCase(),
       password,
       tenantId
-    );
+    ]);
 
     return {
       name,
@@ -34,8 +33,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<{ user: Omit<User, 'password'>; token: string }> {
-    const db = this.dbService.getDatabase();
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase()) as User | undefined;
+    const user = await this.dbService.queryOne<User>('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
     if (!user || user.password !== password) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -68,12 +66,10 @@ export class AuthService {
   }
 
   async getAllUsers(): Promise<Omit<User, 'password'>[]> {
-    const db = this.dbService.getDatabase();
-    return db.prepare('SELECT name, email, tenantId FROM users').all() as Omit<User, 'password'>[];
+    return this.dbService.query<Omit<User, 'password'>>('SELECT name, email, tenantId FROM users');
   }
 
   async deleteUser(email: string): Promise<void> {
-    const db = this.dbService.getDatabase();
-    db.prepare('DELETE FROM users WHERE email = ?').run(email.toLowerCase());
+    await this.dbService.run('DELETE FROM users WHERE email = ?', [email.toLowerCase()]);
   }
 }

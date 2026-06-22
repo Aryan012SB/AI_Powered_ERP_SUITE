@@ -11,8 +11,7 @@ export class DataController {
   @ApiOperation({ summary: 'Load persisted ERP state for a tenant' })
   @ApiResponse({ status: 200, description: 'Persisted ERP state loaded successfully.' })
   async getData(@Param('tenantId') tenantId: string) {
-    const db = this.dbService.getDatabase();
-    const row = db.prepare('SELECT data FROM erp_state WHERE tenantId = ?').get(tenantId) as { data: string } | undefined;
+    const row = await this.dbService.queryOne<{ data: string }>('SELECT data FROM erp_state WHERE tenantId = ?', [tenantId]);
     if (row) {
       return JSON.parse(row.data);
     }
@@ -24,15 +23,14 @@ export class DataController {
   @ApiOperation({ summary: 'Persist ERP state for a tenant' })
   @ApiResponse({ status: 200, description: 'ERP state persisted successfully.' })
   async saveData(@Param('tenantId') tenantId: string, @Body() data: any) {
-    const db = this.dbService.getDatabase();
     const jsonStr = JSON.stringify(data);
     
-    // Upsert the state in SQLite
-    db.prepare(`
+    // Upsert the state in SQLite / PostgreSQL
+    await this.dbService.run(`
       INSERT INTO erp_state (tenantId, data) 
       VALUES (?, ?) 
-      ON CONFLICT(tenantId) DO UPDATE SET data = excluded.data
-    `).run(tenantId, jsonStr);
+      ON CONFLICT(tenantId) DO UPDATE SET data = EXCLUDED.data
+    `, [tenantId, jsonStr]);
 
     return { status: 'success' };
   }
