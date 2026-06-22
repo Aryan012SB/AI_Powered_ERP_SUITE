@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import { Pool } from 'pg';
 import * as path from 'path';
 
@@ -31,7 +31,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     } else {
       const dbPath = path.resolve(process.cwd(), 'erp_suite.sqlite');
       console.log(`DATABASE_URL not found. Falling back to local SQLite database at: ${dbPath}`);
-      this.sqliteDb = new Database(dbPath);
+      const DatabaseConstructor = require('better-sqlite3');
+      const DbClass = DatabaseConstructor.default || DatabaseConstructor;
+      this.sqliteDb = new DbClass(dbPath) as Database.Database;
       this.sqliteDb.pragma('journal_mode = WAL');
       this.usePostgres = false;
     }
