@@ -6,5 +6,6 @@ COPY apps/web/package*.json ./apps/web/
 RUN npm ci
 COPY apps/api ./apps/api
 WORKDIR /app/apps/api
+RUN npx tsc
 EXPOSE 4000
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/main.js"]
