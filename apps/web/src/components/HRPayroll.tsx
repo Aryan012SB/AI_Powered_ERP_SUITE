@@ -3,17 +3,27 @@ import { useErp } from '../context/ErpContext';
 import { Users, Play, Check, X, CreditCard, Sparkles } from 'lucide-react';
 
 export const HRPayroll: React.FC = () => {
-  const { employees, runPayroll, updateLeave, logApiCall } = useErp();
+  const { employees, runPayroll, updateLeave, logApiCall, auditLogs } = useErp();
   const [selectedPeriod, setSelectedPeriod] = useState('June 2026');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Check if leave request has already been handled in the audit logs
+  const hasBeenHandled = auditLogs.some(log => 
+    log.module === 'HR & Payroll' && 
+    (log.action === 'Leave Request Approved' || log.action === 'Leave Request Rejected') &&
+    log.details.includes('Rutvee Bhut')
+  );
+
   // Mock leave request alert
-  const [leaveRequest, setLeaveRequest] = useState<any>({
-    empId: 'emp-103',
-    empName: 'Rutvee Bhut',
-    days: 4,
-    reason: 'Annual Family Vacation',
-    startDate: '2026-07-02'
+  const [leaveRequest, setLeaveRequest] = useState<any>(() => {
+    if (hasBeenHandled) return null;
+    return {
+      empId: 'emp-103',
+      empName: 'Rutvee Bhut',
+      days: 4,
+      reason: 'Annual Family Vacation',
+      startDate: '2026-07-02'
+    };
   });
 
   const handleRunPayroll = async () => {
