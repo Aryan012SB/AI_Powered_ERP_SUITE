@@ -302,19 +302,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         // Employees
         const initialEmployees: Employee[] = [
-          {
-            id: 'emp-101',
-            name: 'Rohith Raj',
-            email: 'rajuchaswik@gmail.com',
-            role: 'Principal Engineer',
-            department: 'Product Development',
-            salary: 145000,
-            leaveBalance: 18,
-            status: 'Active',
-            payrollHistory: [
-              { period: 'May 2026', netPay: 9280, tax: 1820, deductions: 980, status: 'Processed' }
-            ]
-          },
+
           {
             id: 'emp-102',
             name: 'Himanshu Devatwal',
@@ -421,7 +409,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             startDate: '2026-05-15',
             endDate: '2026-06-30',
             tasks: [
-              { id: 'tsk-201', name: 'Setup IAM Rules & Keycloak Multi-Tenant MFA', assignee: 'Rohith Raj', startDate: '2026-05-15', endDate: '2026-05-30', progress: 100, status: 'Done' },
+              { id: 'tsk-201', name: 'Setup IAM Rules & Keycloak Multi-Tenant MFA', assignee: 'Himanshu Devatwal', startDate: '2026-05-15', endDate: '2026-05-30', progress: 100, status: 'Done' },
               { id: 'tsk-202', name: 'Enforce Cryptographic Hash-Chain on Ledger Audit Log', assignee: 'Rutvee Bhut', startDate: '2026-06-01', endDate: '2026-06-18', progress: 100, status: 'Done' },
               { id: 'tsk-203', name: 'Compile Evidence Portal for auditors', assignee: 'Bitthal Tejra', startDate: '2026-06-15', endDate: '2026-06-30', progress: 40, status: 'In Progress' }
             ]
