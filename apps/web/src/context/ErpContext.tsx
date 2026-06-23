@@ -314,8 +314,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           },
           {
             id: 'emp-102',
-            name: 'Prisha Jain',
-            email: 'prishanileshjain@gmail.com',
+            name: 'Himanshu Devatwal',
+            email: 'himanshudevatwal@gmail.com',
             role: 'Financial Director',
             department: 'Finance',
             salary: 155000,
@@ -412,7 +412,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             id: 'proj-2',
             name: 'SOC 2 Security Audit Alignment',
             code: 'PRJ-2026-SOC2',
-            manager: 'Prisha Jain',
+            manager: 'Himanshu Devatwal',
             budget: 120000,
             actualCost: 95000,
             startDate: '2026-05-15',
@@ -675,7 +675,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isAdmin = currentUser?.email === 'admin@amdox.io';
   
   const loggedInEmployee = employees.find(e => e.email.toLowerCase() === currentUser?.email.toLowerCase());
-  const isManager = currentUser?.email === 'prishanileshjain@gmail.com' || (!!loggedInEmployee && (
+  const isManager = currentUser?.email === 'himanshudevatwal@gmail.com' || (!!loggedInEmployee && (
     loggedInEmployee.role.toLowerCase().includes('director') || 
     loggedInEmployee.role.toLowerCase().includes('manager') || 
     loggedInEmployee.role.toLowerCase().includes('lead')

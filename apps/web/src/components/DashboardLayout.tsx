@@ -138,7 +138,7 @@ export const DashboardLayout: React.FC = () => {
           
           <div className="grid grid-cols-2 gap-2 text-[9px] font-mono text-slate-400">
             <span title="rajuchaswik@gmail.com">Rohith</span>
-            <span title="prishanileshjain@gmail.com">Prisha J.</span>
+            <span title="himanshudevatwal@gmail.com">Himanshu D.</span>
             <span title="rutveeb.15@gmail.com">Rutvee B.</span>
             <span title="rmpatidar98@gmail.com">Radhey M.</span>
             <span title="bitthaltejra2@gmail.com">Bitthal T.</span>
