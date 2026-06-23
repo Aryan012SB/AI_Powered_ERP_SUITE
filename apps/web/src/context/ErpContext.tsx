@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { 
   Tenant, Transaction, Invoice, Employee, InventoryItem, 
-  PurchaseOrder, AuditLog, ErpProject, NotificationLog, LeaveRequest 
+  PurchaseOrder, AuditLog, ErpProject, NotificationLog, LeaveRequest, ErpTask
 } from '../types';
 
 
@@ -29,6 +29,8 @@ interface ErpContextProps {
   deliverPO: (id: string) => Promise<void>;
   projects: ErpProject[];
   updateProjectTask: (projId: string, taskId: string, progress: number, status: 'Todo' | 'In Progress' | 'Done') => Promise<void>;
+  updateProject: (id: string, updatedFields: Partial<ErpProject>) => Promise<void>;
+  addProjectTask: (projId: string, task: Omit<ErpTask, 'id' | 'progress' | 'status'>) => Promise<void>;
   auditLogs: AuditLog[];
   verifyAuditTrail: () => Promise<boolean>;
   notifications: NotificationLog[];
@@ -750,7 +752,9 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
 
         // Compute total project progress
-        const totalProgress = Math.round(updatedTasks.reduce((acc, t) => acc + t.progress, 0) / updatedTasks.length);
+        const totalProgress = updatedTasks.length > 0 
+          ? Math.round(updatedTasks.reduce((acc, t) => acc + t.progress, 0) / updatedTasks.length)
+          : 0;
 
         return {
           ...proj,
@@ -761,6 +765,43 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return proj;
     }));
     await addAuditLog(`Update Project Task`, `Projects`, `Updated task ${taskId} in project ${projId} to ${progress}% completion`);
+  };
+
+  const updateProject = async (id: string, updatedFields: Partial<ErpProject>) => {
+    setProjects(prev => prev.map(proj => {
+      if (proj.id === id) {
+        return { ...proj, ...updatedFields };
+      }
+      return proj;
+    }));
+    // Get project name dynamically from final projects state
+    setProjects(prev => {
+      const proj = prev.find(p => p.id === id);
+      addAuditLog(`Update Project Details`, `Projects`, `Updated project details for project ${proj?.name || id}`);
+      return prev;
+    });
+  };
+
+  const addProjectTask = async (projId: string, task: Omit<ErpTask, 'id' | 'progress' | 'status'>) => {
+    const newTask: ErpTask = {
+      ...task,
+      id: `tsk-${Math.floor(100 + Math.random() * 900)}`,
+      progress: 0,
+      status: 'Todo'
+    };
+    setProjects(prev => prev.map(proj => {
+      if (proj.id === projId) {
+        const updatedTasks = [...proj.tasks, newTask];
+        const totalProgress = Math.round(updatedTasks.reduce((acc, t) => acc + t.progress, 0) / updatedTasks.length);
+        return {
+          ...proj,
+          progress: totalProgress,
+          tasks: updatedTasks
+        };
+      }
+      return proj;
+    }));
+    await addAuditLog(`Add Project Task`, `Projects`, `Added task "${task.name}" assigned to ${task.assignee}`);
   };
 
   // Verification of cryptographic integrity of the audit logs
@@ -970,7 +1011,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       invoices, processOcrInvoice, payInvoice,
       employees, runPayroll, updateLeave, updateEmployee,
       inventory, purchaseOrders, createPO, deliverPO,
-      projects, updateProjectTask,
+      projects, updateProjectTask, updateProject, addProjectTask,
       auditLogs, verifyAuditTrail,
       notifications, triggerNotification,
       apiHistory, logApiCall,

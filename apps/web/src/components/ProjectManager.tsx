@@ -3,11 +3,45 @@ import { useErp } from '../context/ErpContext';
 import { Calendar, Briefcase, UserCheck, Sliders } from 'lucide-react';
 
 export const ProjectManager: React.FC = () => {
-  const { projects, updateProjectTask, logApiCall } = useErp();
+  const { 
+    projects, updateProjectTask, logApiCall, 
+    isAdmin, isManager, isEmployee, currentUser, 
+    updateProject, addProjectTask 
+  } = useErp();
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || 'proj-1');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [taskProgress, setTaskProgress] = useState<number>(0);
   const [taskStatus, setTaskStatus] = useState<'Todo' | 'In Progress' | 'Done'>('In Progress');
+
+  // Edit Project Details State
+  const [isEditingProject, setIsEditingProject] = useState(false);
+  const [editProjName, setEditProjName] = useState('');
+  const [editProjManager, setEditProjManager] = useState('');
+  const [editProjBudget, setEditProjBudget] = useState(0);
+  const [editProjCost, setEditProjCost] = useState(0);
+
+  // Add Milestone Task State
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [newTaskEndDate, setNewTaskEndDate] = useState('');
+
+  const handleStartEditProject = (proj: any) => {
+    setEditProjName(proj.name);
+    setEditProjManager(proj.manager);
+    setEditProjBudget(proj.budget);
+    setEditProjCost(proj.actualCost);
+    setIsEditingProject(true);
+  };
+
+  const canEditTask = (task: any) => {
+    if (isAdmin || isManager) return true;
+    if (!currentUser) return false;
+    const nameLower = currentUser.name.toLowerCase();
+    const emailLower = currentUser.email.toLowerCase();
+    const assigneeLower = task.assignee.toLowerCase();
+    return assigneeLower.includes(nameLower) || assigneeLower.includes(emailLower);
+  };
 
   const activeProject = projects.find(p => p.id === selectedProjectId);
 
@@ -66,16 +100,36 @@ export const ProjectManager: React.FC = () => {
           </p>
         </div>
 
-        {/* Project Selector */}
-        <select
-          value={selectedProjectId}
-          onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 focus:outline-none focus:border-purple-500 self-start md:self-center"
-        >
-          {projects.map(p => (
-            <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
-          ))}
-        </select>
+        {/* Project Selector & Actions */}
+        <div className="flex items-center gap-2 self-start md:self-center">
+          <select
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 focus:outline-none focus:border-purple-500 appearance-none"
+          >
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
+            ))}
+          </select>
+
+          {!isEmployee && (
+            <button
+              onClick={() => handleStartEditProject(selectedProject)}
+              className="bg-purple-650/15 hover:bg-purple-600/20 text-purple-300 border border-purple-500/25 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition"
+            >
+              Edit Project
+            </button>
+          )}
+
+          {!isEmployee && (
+            <button
+              onClick={() => setIsAddingTask(true)}
+              className="bg-emerald-650/15 hover:bg-emerald-650/20 text-emerald-300 border border-emerald-500/25 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition"
+            >
+              + Add Task
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Project Financials & Resource Load */}
@@ -265,12 +319,16 @@ export const ProjectManager: React.FC = () => {
                     }`}>
                       {task.status} ({task.progress}%)
                     </span>
-                    <button 
-                      onClick={() => selectTaskForEdit(task)}
-                      className="bg-slate-900 hover:bg-slate-800 text-slate-350 px-2 py-1 rounded border border-slate-800 text-[10px] transition-all font-mono"
-                    >
-                      Edit
-                    </button>
+                    {canEditTask(task) ? (
+                      <button 
+                        onClick={() => selectTaskForEdit(task)}
+                        className="bg-slate-900 hover:bg-slate-800 text-slate-350 px-2 py-1 rounded border border-slate-800 text-[10px] transition-all font-mono cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-slate-550 italic font-mono">Restricted</span>
+                    )}
                   </div>
                 </div>
 
@@ -288,6 +346,170 @@ export const ProjectManager: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Project Details Modal */}
+      {isEditingProject && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h3 className="text-lg font-display font-semibold text-slate-200">Edit Project Details</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Project Name</label>
+                <input 
+                  type="text" 
+                  value={editProjName}
+                  onChange={(e) => setEditProjName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-550"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Project Manager</label>
+                <input 
+                  type="text" 
+                  value={editProjManager}
+                  onChange={(e) => setEditProjManager(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-550"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Budget ($)</label>
+                  <input 
+                    type="number" 
+                    value={editProjBudget}
+                    onChange={(e) => setEditProjBudget(parseInt(e.target.value) || 0)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-555 font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Actual Cost ($)</label>
+                  <input 
+                    type="number" 
+                    value={editProjCost}
+                    onChange={(e) => setEditProjCost(parseInt(e.target.value) || 0)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-555 font-mono"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-900">
+              <button 
+                onClick={async () => {
+                  if (!editProjName || !editProjManager) {
+                    alert("Please fill out all fields.");
+                    return;
+                  }
+                  await updateProject(selectedProject.id, {
+                    name: editProjName,
+                    manager: editProjManager,
+                    budget: editProjBudget,
+                    actualCost: editProjCost
+                  });
+                  setIsEditingProject(false);
+                  alert("Project details updated successfully!");
+                }}
+                className="bg-purple-600 hover:bg-purple-500 text-slate-100 font-semibold px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
+              >
+                Save Changes
+              </button>
+              
+              <button 
+                onClick={() => setIsEditingProject(false)}
+                className="bg-slate-850 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Project Task Modal */}
+      {isAddingTask && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h3 className="text-lg font-display font-semibold text-slate-200">Add New Milestone Task</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Task Title / Milestone</label>
+                <input 
+                  type="text" 
+                  value={newTaskName}
+                  onChange={(e) => setNewTaskName(e.target.value)}
+                  placeholder="e.g. Optimize SQL Query Performance"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Assignee</label>
+                <input 
+                  type="text" 
+                  value={newTaskAssignee}
+                  onChange={(e) => setNewTaskAssignee(e.target.value)}
+                  placeholder="e.g. Himanshu Devatwal"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Due Date / End Date</label>
+                <input 
+                  type="date" 
+                  value={newTaskEndDate}
+                  onChange={(e) => setNewTaskEndDate(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-900">
+              <button 
+                onClick={async () => {
+                  if (!newTaskName || !newTaskAssignee || !newTaskEndDate) {
+                    alert("Please fill out all fields.");
+                    return;
+                  }
+                  await addProjectTask(selectedProject.id, {
+                    name: newTaskName,
+                    assignee: newTaskAssignee,
+                    startDate: new Date().toISOString().split('T')[0],
+                    endDate: newTaskEndDate
+                  });
+                  setNewTaskName('');
+                  setNewTaskAssignee('');
+                  setNewTaskEndDate('');
+                  setIsAddingTask(false);
+                  alert("Milestone task added successfully!");
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-slate-100 font-semibold px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
+              >
+                Create Task
+              </button>
+              
+              <button 
+                onClick={() => setIsAddingTask(false)}
+                className="bg-slate-855 hover:bg-slate-800 text-slate-330 px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
