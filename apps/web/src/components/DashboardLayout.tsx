@@ -23,22 +23,11 @@ import {
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
-  const { activeTenant, tenants, setTenant, verifyAuditTrail, currentUser, logout, isEmployee } = useErp();
+  const { activeTenant, tenants, setTenant, verifyAuditTrail, currentUser, logout } = useErp();
   const [activeTab, setActiveTab] = useState('bi');
   const [isOnline, setIsOnline] = useState(true);
   const [isVerifyingChain, setIsVerifyingChain] = useState(false);
   const [isChainValid, setIsChainValid] = useState<boolean | null>(true);
-
-  // Sync default active tab when user logs in or role status is resolved
-  React.useEffect(() => {
-    if (currentUser) {
-      if (isEmployee) {
-        setActiveTab('hr');
-      } else {
-        setActiveTab('bi');
-      }
-    }
-  }, [currentUser, isEmployee]);
 
   if (!currentUser) {
     return <AuthForm />;
@@ -59,9 +48,7 @@ export const DashboardLayout: React.FC = () => {
     { id: 'auth', name: 'Identity & MFA', icon: <Shield className="w-4 h-4" /> },
   ];
 
-  const menuItems = isEmployee
-    ? allMenuItems.filter(item => ['hr', 'projects', 'auth'].includes(item.id))
-    : allMenuItems;
+  const menuItems = allMenuItems;
 
   const handleVerifyChain = async () => {
     setIsVerifyingChain(true);
@@ -73,11 +60,7 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const renderActiveComponent = () => {
-    const allowedTab = isEmployee 
-      ? (['hr', 'projects', 'auth'].includes(activeTab) ? activeTab : 'hr')
-      : activeTab;
-
-    switch (allowedTab) {
+    switch (activeTab) {
       case 'auth': return <AuthManager />;
       case 'ledger': return <FinancialLedger />;
       case 'ap_ar': return <APARAutomation />;
