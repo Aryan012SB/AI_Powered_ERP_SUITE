@@ -74,6 +74,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         { name: 'Himanshu Devatwal', email: 'himanshudevatwal@gmail.com', password: 'password', tenantId: 't-amdox' },
         { name: 'Rutvee Bhut', email: 'rutveeb.15@gmail.com', password: 'password', tenantId: 't-amdox' },
         { name: 'Radhey Mohan', email: 'rmpatidar98@gmail.com', password: 'password', tenantId: 't-amdox' },
+        { name: 'Aryan Solanki', email: '112aryansolanki@gmail.com', password: 'password', tenantId: 't-amdox' },
         { name: 'Administrator', email: 'admin@amdox.io', password: 'password', tenantId: 't-amdox' },
       ];
 
@@ -85,10 +86,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    // Ensure Himanshu Devatwal is added and Prisha Jain is removed from existing database
+    // Ensure Himanshu Devatwal and Aryan Solanki are added, and old users are removed from existing database
     await this.run(
       'INSERT INTO users (name, email, password, tenantId) VALUES (?, ?, ?, ?) ON CONFLICT (email) DO NOTHING',
       ['Himanshu Devatwal', 'himanshudevatwal@gmail.com', 'password', 't-amdox']
+    );
+    await this.run(
+      'INSERT INTO users (name, email, password, tenantId) VALUES (?, ?, ?, ?) ON CONFLICT (email) DO NOTHING',
+      ['Aryan Solanki', '112aryansolanki@gmail.com', 'password', 't-amdox']
     );
     await this.run(
       'DELETE FROM users WHERE email = ?',

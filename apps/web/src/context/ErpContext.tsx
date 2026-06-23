@@ -337,6 +337,17 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             leaveBalance: 22,
             status: 'Active',
             payrollHistory: []
+          },
+          {
+            id: 'emp-105',
+            name: 'Aryan Solanki',
+            email: '112aryansolanki@gmail.com',
+            role: 'AI / ML Engineer',
+            department: 'R&D',
+            salary: 130000,
+            leaveBalance: 22,
+            status: 'Active',
+            payrollHistory: []
           }
         ];
         setEmployees(initialEmployees);
