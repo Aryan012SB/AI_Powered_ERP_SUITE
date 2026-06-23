@@ -3,7 +3,7 @@ import { useErp } from '../context/ErpContext';
 import { Shield, Key, RefreshCw, Cpu, Award, CheckCircle, Trash2, UserPlus, Users, Mail, Building } from 'lucide-react';
 
 export const AuthManager: React.FC = () => {
-  const { activeTenant, logApiCall, usersList, adminCreateUser, adminDeleteUser } = useErp();
+  const { activeTenant, logApiCall, usersList, adminCreateUser, adminDeleteUser, isAdmin } = useErp();
   const [totp, setTotp] = useState('');
   const [enteredTotp, setEnteredTotp] = useState('');
   const [mfaVerified, setMfaVerified] = useState(false);
@@ -207,12 +207,22 @@ export const AuthManager: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Create User Form */}
           <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-900 flex flex-col justify-between space-y-4 col-span-1">
-            <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-1.5 font-display">
-              <UserPlus className="w-4 h-4 text-purple-400" /> Provision New User
-            </h4>
+            <div>
+              <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-1.5 font-display mb-3">
+                <UserPlus className="w-4 h-4 text-purple-400" /> Provision New User
+              </h4>
+              
+              {!isAdmin && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 p-3 rounded-xl text-[10px] flex items-start gap-2 mb-4 leading-normal">
+                  <Shield className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Access Restricted: Only admin@amdox.io can edit identity configurations.</span>
+                </div>
+              )}
+            </div>
             
             <form onSubmit={async (e) => {
               e.preventDefault();
+              if (!isAdmin) return;
               setIsSubmitting(true);
               const success = await adminCreateUser(newUserName, newUserEmail, newUserPassword, newUserTenant);
               setIsSubmitting(false);
@@ -230,7 +240,8 @@ export const AuthManager: React.FC = () => {
                   onChange={(e) => setNewUserName(e.target.value)}
                   placeholder="e.g. Aryan Solanki"
                   required
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+                  disabled={!isAdmin}
+                  className="w-full bg-slate-900 disabled:bg-slate-950 disabled:text-slate-500 disabled:border-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
                 />
               </div>
 
@@ -242,7 +253,8 @@ export const AuthManager: React.FC = () => {
                   onChange={(e) => setNewUserEmail(e.target.value)}
                   placeholder="e.g. aryan@amdox.io"
                   required
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+                  disabled={!isAdmin}
+                  className="w-full bg-slate-900 disabled:bg-slate-950 disabled:text-slate-500 disabled:border-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
                 />
               </div>
 
@@ -254,7 +266,8 @@ export const AuthManager: React.FC = () => {
                   onChange={(e) => setNewUserPassword(e.target.value)}
                   placeholder="Minimum 6 characters"
                   required
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+                  disabled={!isAdmin}
+                  className="w-full bg-slate-900 disabled:bg-slate-950 disabled:text-slate-500 disabled:border-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
                 />
               </div>
 
@@ -263,7 +276,8 @@ export const AuthManager: React.FC = () => {
                 <select
                   value={newUserTenant}
                   onChange={(e) => setNewUserTenant(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-350 focus:outline-none"
+                  disabled={!isAdmin}
+                  className="w-full bg-slate-900 disabled:bg-slate-950 disabled:text-slate-500 disabled:border-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-350 focus:outline-none"
                 >
                   <option value="t-amdox">Amdox Technologies (t-amdox)</option>
                   <option value="t-apex">Apex Logistics Inc. (t-apex)</option>
@@ -273,10 +287,10 @@ export const AuthManager: React.FC = () => {
 
               <button 
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800/40 text-slate-100 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 mt-4"
+                disabled={isSubmitting || !isAdmin}
+                className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800/20 disabled:text-slate-550 disabled:border-slate-900/50 text-slate-100 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 mt-4"
               >
-                <UserPlus className="w-3.5 h-3.5" /> {isSubmitting ? 'Provisioning...' : 'Provision Account'}
+                <UserPlus className="w-3.5 h-3.5" /> {isSubmitting ? 'Provisioning...' : isAdmin ? 'Provision Account' : 'Provisioning Disabled'}
               </button>
             </form>
           </div>
@@ -321,12 +335,21 @@ export const AuthManager: React.FC = () => {
                         <td className="p-3 text-center">
                           <button
                             onClick={async () => {
+                              if (!isAdmin) {
+                                alert("Only admin@amdox.io can revoke access.");
+                                return;
+                              }
                               if (confirm(`Are you sure you want to delete user ${usr.name} (${usr.email})?`)) {
                                 await adminDeleteUser(usr.email);
                               }
                             }}
-                            className="p-2 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 rounded-xl text-slate-500 hover:text-rose-450 transition"
-                            title="Delete User"
+                            disabled={!isAdmin}
+                            className={`p-2 rounded-xl transition ${
+                              isAdmin 
+                                ? 'hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 text-slate-500 hover:text-rose-455 cursor-pointer' 
+                                : 'opacity-40 text-slate-650 cursor-not-allowed'
+                            }`}
+                            title={isAdmin ? "Delete User" : "Admin Only"}
                           >
                             <Trash2 className="w-4 h-4 mx-auto" />
                           </button>

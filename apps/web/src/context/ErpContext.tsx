@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { 
   Tenant, Transaction, Invoice, Employee, InventoryItem, 
-  PurchaseOrder, AuditLog, ErpProject, NotificationLog 
+  PurchaseOrder, AuditLog, ErpProject, NotificationLog, LeaveRequest 
 } from '../types';
 
 
@@ -16,7 +16,12 @@ interface ErpContextProps {
   payInvoice: (id: string) => Promise<void>;
   employees: Employee[];
   runPayroll: (period: string) => Promise<void>;
-  updateLeave: (empId: string, days: number, approve: boolean) => Promise<void>;
+  updateLeave: (reqId: string, empId: string, days: number, approve: boolean) => Promise<void>;
+  leaveRequests: LeaveRequest[];
+  applyForLeave: (days: number, startDate: string, reason: string) => Promise<void>;
+  isAdmin: boolean;
+  isManager: boolean;
+  isEmployee: boolean;
   inventory: InventoryItem[];
   purchaseOrders: PurchaseOrder[];
   createPO: (po: Omit<PurchaseOrder, 'id' | 'status' | 'date'>) => Promise<void>;
@@ -64,6 +69,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const isLoadingRef = React.useRef(true);
+  const lastHashRef = React.useRef('0000000000000000000000000000000000000000000000000000000000000000');
+  const auditLogQueueRef = React.useRef<Promise<void>>(Promise.resolve());
 
   const getApiUrl = () => {
     const envUrl = (import.meta as any).env?.VITE_API_URL;
@@ -82,7 +89,14 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (data.inventory) setInventory(data.inventory);
           if (data.purchaseOrders) setPurchaseOrders(data.purchaseOrders);
           if (data.projects) setProjects(data.projects);
-          if (data.auditLogs) setAuditLogs(data.auditLogs);
+          if (data.auditLogs) {
+            setAuditLogs(data.auditLogs);
+            const lastLog = data.auditLogs[data.auditLogs.length - 1];
+            lastHashRef.current = lastLog ? lastLog.hash : '0000000000000000000000000000000000000000000000000000000000000000';
+          } else {
+            lastHashRef.current = '0000000000000000000000000000000000000000000000000000000000000000';
+          }
+          if (data.leaveRequests) setLeaveRequests(data.leaveRequests);
           if (data.notifications) setNotifications(data.notifications);
           console.log(`ERP state loaded from database for tenant: ${tenantId}`);
           return true;
@@ -104,7 +118,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         purchaseOrders,
         projects,
         auditLogs,
-        notifications
+        notifications,
+        leaveRequests
       };
 
       await fetch(`${getApiUrl()}/api/v1/data/${tenantId}`, {
@@ -136,6 +151,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [projects, setProjects] = useState<ErpProject[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [notifications, setNotifications] = useState<NotificationLog[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [apiHistory, setApiHistory] = useState<{ timestamp: string; method: string; url: string; status: number; duration: number }[]>([]);
 
   // Helpers
@@ -147,19 +163,25 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
 
-  const addAuditLog = async (action: string, module: string, details: string) => {
-    const timestamp = new Date().toISOString();
-    const userId = "usr-042";
-    const id = `audit-${Math.random().toString(36).substr(2, 9)}`;
-    const prevEntry = auditLogs[auditLogs.length - 1];
-    const prevHash = prevEntry ? prevEntry.hash : '0000000000000000000000000000000000000000000000000000000000000000';
-    const blockString = `${id}|${timestamp}|${userId}|${action}|${module}|${details}|${activeTenant.id}|${prevHash}`;
-    const hash = await computeHash(blockString);
+  const addAuditLog = (action: string, module: string, details: string): Promise<void> => {
+    const newPromise = auditLogQueueRef.current.then(async () => {
+      const timestamp = new Date().toISOString();
+      const userId = "usr-042";
+      const id = `audit-${Math.random().toString(36).substr(2, 9)}`;
+      const prevHash = lastHashRef.current;
+      const blockString = `${id}|${timestamp}|${userId}|${action}|${module}|${details}|${activeTenant.id}|${prevHash}`;
+      const hash = await computeHash(blockString);
 
-    const newLog: AuditLog = {
-      id, timestamp, userId, action, module, details, tenantId: activeTenant.id, hash, prevHash
-    };
-    setAuditLogs(prev => [...prev, newLog]);
+      lastHashRef.current = hash;
+
+      const newLog: AuditLog = {
+        id, timestamp, userId, action, module, details, tenantId: activeTenant.id, hash, prevHash
+      };
+      setAuditLogs(prev => [...prev, newLog]);
+    });
+
+    auditLogQueueRef.current = newPromise;
+    return newPromise;
   };
 
   // Load or Seed Initial Data
@@ -412,6 +434,21 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ];
         setNotifications(initialNotifications);
 
+        const initialLeaveRequests: LeaveRequest[] = [
+          {
+            id: 'req-mock-1',
+            empId: 'emp-103',
+            empName: 'Rutvee Bhut',
+            days: 4,
+            reason: 'Annual Family Vacation',
+            startDate: '2026-07-02',
+            status: 'Pending'
+          }
+        ];
+        setLeaveRequests(initialLeaveRequests);
+
+        lastHashRef.current = prevHash;
+
         // Persist seed data to database
         const seededState = {
           transactions: initialTx,
@@ -421,7 +458,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           purchaseOrders: initialPOs,
           projects: initialProjects,
           auditLogs: chain,
-          notifications: initialNotifications
+          notifications: initialNotifications,
+          leaveRequests: initialLeaveRequests
         };
         await saveTenantState(activeTenant.id, seededState);
       }
@@ -436,10 +474,25 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Auto-persist state changes
   useEffect(() => {
-    if (!isLoadingRef.current && (transactions.length > 0 || invoices.length > 0 || employees.length > 0 || inventory.length > 0)) {
-      saveTenantState(activeTenant.id);
+    if (isLoadingRef.current) return;
+
+    if (
+      transactions.length === 0 &&
+      invoices.length === 0 &&
+      employees.length === 0 &&
+      inventory.length === 0
+    ) {
+      return;
     }
-  }, [transactions, invoices, employees, inventory, purchaseOrders, projects, auditLogs, notifications, activeTenant.id]);
+
+    const handler = setTimeout(() => {
+      saveTenantState(activeTenant.id);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [transactions, invoices, employees, inventory, purchaseOrders, projects, auditLogs, notifications, leaveRequests, activeTenant.id]);
 
   // Set tenant
   const setTenant = (id: string) => {
@@ -508,27 +561,33 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const payInvoice = async (id: string) => {
-    setInvoices(prev => prev.map(inv => {
-      if (inv.id === id) {
-        // Create Double Entry Transaction for payment
-        addTransaction({
-          description: `Payment for Invoice ${inv.invoiceNumber}`,
-          ref: 'PAY-RUN',
-          currency: inv.currency,
-          exchangeRate: 1.0,
-          debits: [{ account: 'Accounts Payable', amount: inv.amount }],
-          credits: [{ account: 'Cash & Cash Equivalents', amount: inv.amount }]
-        });
-        return { ...inv, status: 'Paid' };
+    const inv = invoices.find(item => item.id === id);
+    if (!inv) return;
+
+    // Create Double Entry Transaction for payment
+    await addTransaction({
+      description: `Payment for Invoice ${inv.invoiceNumber}`,
+      ref: 'PAY-RUN',
+      currency: inv.currency,
+      exchangeRate: 1.0,
+      debits: [{ account: 'Accounts Payable', amount: inv.amount }],
+      credits: [{ account: 'Cash & Cash Equivalents', amount: inv.amount }]
+    });
+
+    setInvoices(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, status: 'Paid' };
       }
-      return inv;
+      return item;
     }));
     await addAuditLog(`Invoice Disbursement`, `AP/AR`, `Disbursed funds for invoice ${id}`);
   };
 
   // HR & Payroll Actions
   const runPayroll = async (period: string) => {
-    setEmployees(prev => prev.map(emp => {
+    const newTransactionsList: Omit<Transaction, 'id' | 'status' | 'date'>[] = [];
+    
+    const updatedEmployees = employees.map(emp => {
       if (emp.status === 'Active') {
         const gross = emp.salary / 12;
         const tax = gross * 0.15;
@@ -543,8 +602,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           status: 'Processed' as const
         };
 
-        // Create transaction entry for wages expense
-        addTransaction({
+        newTransactionsList.push({
           description: `Payroll Wages Expense - ${emp.name} (${period})`,
           ref: 'PAYROLL',
           currency: 'USD',
@@ -562,26 +620,68 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       }
       return emp;
-    }));
+    });
+
+    setEmployees(updatedEmployees);
+
+    for (const tx of newTransactionsList) {
+      await addTransaction(tx);
+    }
 
     await addAuditLog(`Execute Payroll Run`, `HR & Payroll`, `Executed monthly payroll ledger run for ${period}`);
     await triggerNotification('Email', 'finance-team@amdox.io', `Payroll run for ${period} executed successfully`);
   };
 
-  const updateLeave = async (empId: string, days: number, approve: boolean) => {
-    setEmployees(prev => prev.map(emp => {
-      if (emp.id === empId) {
-        const approvedText = approve ? 'Approved' : 'Rejected';
-        addAuditLog(`Leave Request ${approvedText}`, `HR & Payroll`, `${approvedText} leave request of ${days} days for ${emp.name}`);
-        return {
-          ...emp,
-          leaveBalance: approve ? emp.leaveBalance - days : emp.leaveBalance,
-          status: approve ? 'Leave' : emp.status
-        };
-      }
-      return emp;
-    }));
+  const updateLeave = async (reqId: string, empId: string, days: number, approve: boolean) => {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+
+    const approvedText = approve ? 'Approved' : 'Rejected';
+    await addAuditLog(`Leave Request ${approvedText}`, `HR & Payroll`, `${approvedText} leave request of ${days} days for ${emp.name}`);
+
+    if (approve) {
+      setEmployees(prev => prev.map(e => {
+        if (e.id === empId) {
+          return {
+            ...e,
+            leaveBalance: e.leaveBalance - days,
+            status: 'Leave'
+          };
+        }
+        return e;
+      }));
+    }
+
+    setLeaveRequests(prev => prev.filter(r => r.id !== reqId));
   };
+
+  const applyForLeave = async (days: number, startDate: string, reason: string) => {
+    const loggedInEmployee = employees.find(e => e.email.toLowerCase() === currentUser?.email.toLowerCase());
+    
+    const newRequest: LeaveRequest = {
+      id: `req-${Math.floor(100 + Math.random() * 900)}`,
+      empId: loggedInEmployee?.id || 'emp-unknown',
+      empName: currentUser?.name || 'Unknown Employee',
+      days,
+      startDate,
+      reason,
+      status: 'Pending'
+    };
+
+    setLeaveRequests(prev => [...prev, newRequest]);
+    await addAuditLog(`Leave Request Applied`, `HR & Payroll`, `${currentUser?.name} applied for ${days} days of leave starting ${startDate}`);
+  };
+
+  const isAdmin = currentUser?.email === 'admin@amdox.io';
+  
+  const loggedInEmployee = employees.find(e => e.email.toLowerCase() === currentUser?.email.toLowerCase());
+  const isManager = currentUser?.email === 'prishanileshjain@gmail.com' || (!!loggedInEmployee && (
+    loggedInEmployee.role.toLowerCase().includes('director') || 
+    loggedInEmployee.role.toLowerCase().includes('manager') || 
+    loggedInEmployee.role.toLowerCase().includes('lead')
+  ));
+  
+  const isEmployee = !isAdmin && !isManager;
 
   // Supply Chain Actions
   const createPO = async (po: Omit<PurchaseOrder, 'id' | 'status' | 'date'>) => {
@@ -596,25 +696,31 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deliverPO = async (id: string) => {
-    setPurchaseOrders(prev => prev.map(po => {
-      if (po.id === id) {
-        // Automatically check if items exist and restock in inventory
-        po.items.forEach(item => {
-          setInventory(prevInv => prevInv.map(invItem => {
-            if (invItem.name.toLowerCase() === item.name.toLowerCase() || invItem.supplier === po.vendorName) {
-              return {
-                ...invItem,
-                quantity: invItem.quantity + item.qty,
-                status: (invItem.quantity + item.qty) > invItem.minStockLevel ? 'In Stock' : 'Low Stock'
-              };
-            }
-            return invItem;
-          }));
-        });
-        return { ...po, status: 'Delivered' };
+    const po = purchaseOrders.find(p => p.id === id);
+    if (!po) return;
+
+    setInventory(prevInv => prevInv.map(invItem => {
+      const matchingItem = po.items.find(item => 
+        invItem.name.toLowerCase() === item.name.toLowerCase() || invItem.supplier === po.vendorName
+      );
+      if (matchingItem) {
+        const newQty = invItem.quantity + matchingItem.qty;
+        return {
+          ...invItem,
+          quantity: newQty,
+          status: newQty > invItem.minStockLevel ? 'In Stock' : 'Low Stock'
+        };
       }
-      return po;
+      return invItem;
     }));
+
+    setPurchaseOrders(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, status: 'Delivered' };
+      }
+      return item;
+    }));
+
     await addAuditLog(`PO Delivery Received`, `Supply Chain`, `Marked PO ${id} as fully delivered. Automated inventory adjustments complete.`);
   };
 
@@ -814,7 +920,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notifications, triggerNotification,
       apiHistory, logApiCall,
       currentUser, login, register, logout,
-      usersList, fetchUsersList, adminCreateUser, adminDeleteUser
+      usersList, fetchUsersList, adminCreateUser, adminDeleteUser,
+      leaveRequests, applyForLeave, isAdmin, isManager, isEmployee
     }}>
       {children}
     </ErpContext.Provider>

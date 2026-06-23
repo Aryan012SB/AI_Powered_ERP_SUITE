@@ -129,3 +129,13 @@ export interface NotificationLog {
   status: 'Success' | 'Failed' | 'Retrying';
   attempts: number;
 }
+
+export interface LeaveRequest {
+  id: string;
+  empId: string;
+  empName: string;
+  days: number;
+  reason: string;
+  startDate: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+}

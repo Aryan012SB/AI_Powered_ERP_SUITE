@@ -23,18 +23,29 @@ import {
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
-  const { activeTenant, tenants, setTenant, verifyAuditTrail, currentUser, logout } = useErp();
+  const { activeTenant, tenants, setTenant, verifyAuditTrail, currentUser, logout, isEmployee } = useErp();
   const [activeTab, setActiveTab] = useState('bi');
   const [isOnline, setIsOnline] = useState(true);
   const [isVerifyingChain, setIsVerifyingChain] = useState(false);
   const [isChainValid, setIsChainValid] = useState<boolean | null>(true);
+
+  // Sync default active tab when user logs in or role status is resolved
+  React.useEffect(() => {
+    if (currentUser) {
+      if (isEmployee) {
+        setActiveTab('hr');
+      } else {
+        setActiveTab('bi');
+      }
+    }
+  }, [currentUser, isEmployee]);
 
   if (!currentUser) {
     return <AuthForm />;
   }
 
   // Tab items
-  const menuItems = [
+  const allMenuItems = [
     { id: 'bi', name: 'Business Intelligence', icon: <BarChart2 className="w-4 h-4" /> },
     { id: 'ledger', name: 'General Ledger', icon: <Coins className="w-4 h-4" /> },
     { id: 'ap_ar', name: 'AP / AR Automation', icon: <FileText className="w-4 h-4" /> },
@@ -48,6 +59,10 @@ export const DashboardLayout: React.FC = () => {
     { id: 'auth', name: 'Identity & MFA', icon: <Shield className="w-4 h-4" /> },
   ];
 
+  const menuItems = isEmployee
+    ? allMenuItems.filter(item => ['hr', 'projects', 'auth'].includes(item.id))
+    : allMenuItems;
+
   const handleVerifyChain = async () => {
     setIsVerifyingChain(true);
     setTimeout(async () => {
@@ -58,7 +73,11 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const renderActiveComponent = () => {
-    switch (activeTab) {
+    const allowedTab = isEmployee 
+      ? (['hr', 'projects', 'auth'].includes(activeTab) ? activeTab : 'hr')
+      : activeTab;
+
+    switch (allowedTab) {
       case 'auth': return <AuthManager />;
       case 'ledger': return <FinancialLedger />;
       case 'ap_ar': return <APARAutomation />;
