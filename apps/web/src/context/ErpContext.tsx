@@ -17,6 +17,7 @@ interface ErpContextProps {
   employees: Employee[];
   runPayroll: (period: string) => Promise<void>;
   updateLeave: (reqId: string, empId: string, days: number, approve: boolean) => Promise<void>;
+  updateEmployee: (id: string, updatedFields: Partial<Employee>) => Promise<void>;
   leaveRequests: LeaveRequest[];
   applyForLeave: (days: number, startDate: string, reason: string) => Promise<void>;
   isAdmin: boolean;
@@ -634,12 +635,10 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateLeave = async (reqId: string, empId: string, days: number, approve: boolean) => {
     const emp = employees.find(e => e.id === empId);
-    if (!emp) return;
-
     const approvedText = approve ? 'Approved' : 'Rejected';
-    await addAuditLog(`Leave Request ${approvedText}`, `HR & Payroll`, `${approvedText} leave request of ${days} days for ${emp.name}`);
+    await addAuditLog(`Leave Request ${approvedText}`, `HR & Payroll`, `${approvedText} leave request of ${days} days for ${emp ? emp.name : 'Unknown Employee'}`);
 
-    if (approve) {
+    if (approve && emp) {
       setEmployees(prev => prev.map(e => {
         if (e.id === empId) {
           return {
@@ -653,6 +652,21 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     setLeaveRequests(prev => prev.filter(r => r.id !== reqId));
+  };
+
+  const updateEmployee = async (id: string, updatedFields: Partial<Employee>) => {
+    setEmployees(prev => prev.map(emp => {
+      if (emp.id === id) {
+        return { ...emp, ...updatedFields };
+      }
+      return emp;
+    }));
+    // We get the updated employee name from the modified array
+    setEmployees(prev => {
+      const emp = prev.find(e => e.id === id);
+      addAuditLog(`Update Employee Record`, `HR & Payroll`, `Updated employee details for ${emp?.name || id}`);
+      return prev;
+    });
   };
 
   const applyForLeave = async (days: number, startDate: string, reason: string) => {
@@ -803,6 +817,27 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('amx_user', JSON.stringify(data.user));
       localStorage.setItem('amx_token', data.token);
       setCurrentUser(data.user);
+
+      // Auto-provision employee directory record if not present
+      const emailLower = data.user.email.toLowerCase();
+      setEmployees(prev => {
+        const exists = prev.some(e => e.email.toLowerCase() === emailLower);
+        if (!exists && emailLower !== 'admin@amdox.io') {
+          return [...prev, {
+            id: `emp-${Math.floor(105 + Math.random() * 894)}`,
+            name: data.user.name,
+            email: data.user.email,
+            role: 'Associate',
+            department: 'Operations',
+            salary: 60000,
+            leaveBalance: 20,
+            status: 'Active',
+            payrollHistory: []
+          }];
+        }
+        return prev;
+      });
+
       logApiCall('POST', '/api/v1/auth/login', 200, Math.round(performance.now() - start));
       return true;
     } catch (err: any) {
@@ -865,6 +900,26 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         throw new Error(errorData.message || 'Failed to create user');
       }
 
+      // Auto-provision employee record in directory
+      const emailLower = email.toLowerCase();
+      setEmployees(prev => {
+        const exists = prev.some(e => e.email.toLowerCase() === emailLower);
+        if (!exists && emailLower !== 'admin@amdox.io') {
+          return [...prev, {
+            id: `emp-${Math.floor(105 + Math.random() * 894)}`,
+            name,
+            email,
+            role: 'Associate',
+            department: 'Operations',
+            salary: 60000,
+            leaveBalance: 20,
+            status: 'Active',
+            payrollHistory: []
+          }];
+        }
+        return prev;
+      });
+
       await fetchUsersList();
       logApiCall('POST', '/api/v1/auth/users', 201, Math.round(performance.now() - start));
       return true;
@@ -913,7 +968,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       activeTenant, tenants, setTenant,
       transactions, addTransaction,
       invoices, processOcrInvoice, payInvoice,
-      employees, runPayroll, updateLeave,
+      employees, runPayroll, updateLeave, updateEmployee,
       inventory, purchaseOrders, createPO, deliverPO,
       projects, updateProjectTask,
       auditLogs, verifyAuditTrail,

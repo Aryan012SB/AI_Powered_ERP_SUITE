@@ -5,7 +5,7 @@ import { Users, Play, Check, X, CreditCard, Sparkles } from 'lucide-react';
 export const HRPayroll: React.FC = () => {
   const { 
     employees, runPayroll, updateLeave, logApiCall,
-    leaveRequests, applyForLeave, isEmployee, currentUser
+    leaveRequests, applyForLeave, isEmployee, currentUser, updateEmployee
   } = useErp();
   const [selectedPeriod, setSelectedPeriod] = useState('June 2026');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -15,6 +15,25 @@ export const HRPayroll: React.FC = () => {
   const [leaveStartDate, setLeaveStartDate] = useState('');
   const [leaveReason, setLeaveReason] = useState('');
   const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
+
+  // Edit Employee State
+  const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState('');
+  const [editDept, setEditDept] = useState('');
+  const [editSalary, setEditSalary] = useState(0);
+  const [editLeaveBalance, setEditLeaveBalance] = useState(0);
+  const [editStatus, setEditStatus] = useState<'Active' | 'Leave' | 'Onboarding'>('Active');
+
+  const handleStartEdit = (emp: any) => {
+    setEditingEmpId(emp.id);
+    setEditName(emp.name);
+    setEditRole(emp.role);
+    setEditDept(emp.department);
+    setEditSalary(emp.salary);
+    setEditLeaveBalance(emp.leaveBalance);
+    setEditStatus(emp.status);
+  };
 
   const handleRunPayroll = async () => {
     const start = performance.now();
@@ -300,6 +319,7 @@ export const HRPayroll: React.FC = () => {
                 <th className="pb-3">Leave Balance</th>
                 <th className="pb-3">Status</th>
                 {!isEmployee && <th className="pb-3">Last Pay Period</th>}
+                {!isEmployee && <th className="pb-3 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-900">
@@ -335,12 +355,134 @@ export const HRPayroll: React.FC = () => {
                       )}
                     </td>
                   )}
+                  {!isEmployee && (
+                    <td className="py-3.5 text-right">
+                      <button 
+                        onClick={() => handleStartEdit(emp)}
+                        className="bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-500/25 px-2.5 py-1 rounded-lg text-[10px] font-semibold cursor-pointer transition"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Edit Employee Modal */}
+      {editingEmpId && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h3 className="text-lg font-display font-semibold text-slate-200">Edit Employee Record</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Full Name</label>
+                <input 
+                  type="text" 
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-550"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Role / Job Title</label>
+                <input 
+                  type="text" 
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-555"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Department</label>
+                <input 
+                  type="text" 
+                  value={editDept}
+                  onChange={(e) => setEditDept(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-555"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Salary (Annual USD)</label>
+                  <input 
+                    type="number" 
+                    value={editSalary}
+                    onChange={(e) => setEditSalary(parseInt(e.target.value) || 0)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-555 font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Leave Balance (Days)</label>
+                  <input 
+                    type="number" 
+                    value={editLeaveBalance}
+                    onChange={(e) => setEditLeaveBalance(parseInt(e.target.value) || 0)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-555 font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Employment Status</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as any)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Leave">On Leave</option>
+                  <option value="Onboarding">Onboarding</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-900">
+              <button 
+                onClick={async () => {
+                  if (!editName || !editRole || !editDept) {
+                    alert("Please fill out all fields.");
+                    return;
+                  }
+                  await updateEmployee(editingEmpId!, {
+                    name: editName,
+                    role: editRole,
+                    department: editDept,
+                    salary: editSalary,
+                    leaveBalance: editLeaveBalance,
+                    status: editStatus
+                  });
+                  setEditingEmpId(null);
+                  alert("Employee record updated successfully!");
+                }}
+                className="bg-purple-600 hover:bg-purple-500 text-slate-100 font-semibold px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
+              >
+                Save Changes
+              </button>
+              
+              <button 
+                onClick={() => setEditingEmpId(null)}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
