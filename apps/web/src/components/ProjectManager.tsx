@@ -87,6 +87,16 @@ export const ProjectManager: React.FC = () => {
 
   const resourceLoad = getResourceLoad();
 
+  if (projects.length === 0 || !selectedProject) {
+    return (
+      <div className="glass-card p-8 rounded-2xl text-center text-slate-500 flex flex-col justify-center items-center py-20 space-y-3 animate-fade-in">
+        <Briefcase className="w-12 h-12 text-slate-600 animate-pulse" />
+        <h3 className="text-lg font-display font-semibold text-slate-350">Loading Project Workspace...</h3>
+        <p className="text-sm text-slate-500">Establishing database connection and retrieving timeline logs.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-slide-up">
       {/* Header */}
