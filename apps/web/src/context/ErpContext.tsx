@@ -891,9 +891,18 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // HR & Payroll Actions
   const runPayroll = async (period: string) => {
     const newTransactionsList: Omit<Transaction, 'id' | 'status' | 'date'>[] = [];
+    let processedCount = 0;
+    let skippedCount = 0;
     
     const updatedEmployees = employees.map(emp => {
       if (emp.status === 'Active') {
+        const alreadyPaid = emp.payrollHistory.some(p => p.period === period && p.status === 'Processed');
+        if (alreadyPaid) {
+          skippedCount++;
+          return emp;
+        }
+
+        processedCount++;
         const gross = emp.salary / 12;
         const tax = gross * 0.15;
         const deductions = gross * 0.05;
@@ -927,6 +936,15 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return emp;
     });
 
+    if (processedCount === 0) {
+      if (skippedCount > 0) {
+        alert(`Payroll Warning: All active employees have already been paid for the period "${period}". No new disbursements were made.`);
+      } else {
+        alert(`Payroll Warning: No active employees found to execute payroll disbursements.`);
+      }
+      return;
+    }
+
     setEmployees(updatedEmployees);
 
     for (const tx of newTransactionsList) {
@@ -935,6 +953,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     await addAuditLog(`Execute Payroll Run`, `HR & Payroll`, `Executed monthly payroll ledger run for ${period}`);
     await triggerNotification('Email', 'finance-team@amdox.io', `Payroll run for ${period} executed successfully`);
+    alert(`Payroll Success: Successfully processed payroll disbursements for ${processedCount} employee(s) for the period "${period}".`);
   };
 
   const updateLeave = async (reqId: string, empId: string, days: number, approve: boolean) => {
