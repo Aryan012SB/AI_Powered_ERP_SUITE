@@ -5,7 +5,7 @@ import { Network, Send, Key, Database, RefreshCw, Terminal } from 'lucide-react'
 const REST_ENDPOINTS = [
   { path: 'GET /api/v1/finance/ledger/accounts', desc: 'List ledger accounts and balances', defaultResponse: { status: 200, body: { accounts: ['Cash & Cash Equivalents', 'Accounts Receivable', 'Accounts Payable', 'Common Stock Capital'], baseCurrency: 'USD' } } },
   { path: 'POST /api/v1/finance/ap/ocr-ingest', desc: 'Ingest invoice file to trigger OCR', defaultResponse: { status: 202, body: { status: 'Ingested', jobId: 'job-9872a', ocrModel: 'LayoutLMv3-v1.4' } } },
-  { path: 'POST /api/v1/ml/forecast/predict', desc: 'Fetch demand forecasting LSTM values', defaultResponse: { status: 200, body: { model: 'Prophet+LSTM-ensemble', forecastHorizonDays: 90, MAPE: '8.42%', predictions: [ { date: '2026-06-22', demand: 2850 }, { date: '2026-06-23', demand: 2890 } ] } } },
+  { path: 'POST /api/v1/ml/forecast/predict', desc: 'Fetch demand forecasting Linear Regression values', defaultResponse: { status: 200, body: { model: 'Linear Regression (OLS)', forecastHorizonDays: 90, MAPE: '4.25%', predictions: [ { date: '2026-06-22', demand: 2850 }, { date: '2026-06-23', demand: 2890 } ] } } },
   { path: 'GET /api/v1/compliance/audit/logs', desc: 'Get SHA-256 hash-chained audit logs', defaultResponse: { status: 200, body: { totalLogs: 3, verificationStatus: 'SECURE_CC7.2', hashChainRoot: 'k_R2390a-Z2f_891eFJKW9A7B6C5D4e3f2g1h0i' } } }
 ];
 

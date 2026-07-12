@@ -32,9 +32,8 @@ export const FinancialLedger: React.FC = () => {
   const [description, setDescription] = useState('');
   const [ref, setRef] = useState('');
   const [debitAcc, setDebitAcc] = useState(ACCOUNTS[0].name);
-  const [debitAmt, setDebitAmt] = useState('');
   const [creditAcc, setCreditAcc] = useState(ACCOUNTS[4].name);
-  const [creditAmt, setCreditAmt] = useState('');
+  const [amount, setAmount] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -78,18 +77,10 @@ export const FinancialLedger: React.FC = () => {
     setSuccessMessage('');
 
     const start = performance.now();
-    const debVal = parseFloat(debitAmt);
-    const credVal = parseFloat(creditAmt);
+    const val = parseFloat(amount);
 
-    if (isNaN(debVal) || debVal <= 0 || isNaN(credVal) || credVal <= 0) {
-      setErrorMessage('Debit and Credit amounts must be positive numbers');
-      return;
-    }
-
-    // Double-entry validation: sum(Debits) === sum(Credits)
-    if (debVal !== credVal) {
-      setErrorMessage(`Trial balance error: Debits (${symbol}${debVal}) must equal Credits (${symbol}${credVal})!`);
-      logApiCall('POST', '/api/v1/finance/ledger/post', 400, Math.round(performance.now() - start));
+    if (isNaN(val) || val <= 0) {
+      setErrorMessage('Transaction amount must be a positive number');
       return;
     }
 
@@ -99,15 +90,14 @@ export const FinancialLedger: React.FC = () => {
         ref,
         currency: selectedCurrency,
         exchangeRate: rate,
-        debits: [{ account: debitAcc, amount: debVal }],
-        credits: [{ account: creditAcc, amount: credVal }]
+        debits: [{ account: debitAcc, amount: val }],
+        credits: [{ account: creditAcc, amount: val }]
       });
 
       setSuccessMessage('Journal Entry Posted Successfully');
       setDescription('');
       setRef('');
-      setDebitAmt('');
-      setCreditAmt('');
+      setAmount('');
       logApiCall('POST', '/api/v1/finance/ledger/post', 201, Math.round(performance.now() - start));
     } catch (err) {
       setErrorMessage('Failed to post transaction.');
@@ -222,7 +212,7 @@ export const FinancialLedger: React.FC = () => {
               </div>
 
               <div className="border-t border-slate-800/80 my-2 pt-3 space-y-3">
-                {/* Debit Line */}
+                {/* Account Selection */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] text-emerald-400/80 block uppercase font-bold mb-1">Debit Account</label>
@@ -235,21 +225,6 @@ export const FinancialLedger: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-emerald-400/80 block uppercase font-bold mb-1">Debit Amount ({symbol})</label>
-                    <input 
-                      type="number" 
-                      value={debitAmt}
-                      onChange={(e) => setDebitAmt(e.target.value)}
-                      placeholder="0.00" 
-                      required
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Credit Line */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
                     <label className="text-[10px] text-rose-400/80 block uppercase font-bold mb-1">Credit Account</label>
                     <select
                       value={creditAcc}
@@ -259,17 +234,19 @@ export const FinancialLedger: React.FC = () => {
                       {ACCOUNTS.map(a => <option key={a.name} value={a.name}>{a.name}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="text-[10px] text-rose-400/80 block uppercase font-bold mb-1">Credit Amount ({symbol})</label>
-                    <input 
-                      type="number" 
-                      value={creditAmt}
-                      onChange={(e) => setCreditAmt(e.target.value)}
-                      placeholder="0.00" 
-                      required
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none"
-                    />
-                  </div>
+                </div>
+
+                {/* Amount input */}
+                <div>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Transaction Amount ({symbol})</label>
+                  <input 
+                    type="number" 
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00" 
+                    required
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-100 focus:outline-none"
+                  />
                 </div>
               </div>
             </div>
@@ -278,7 +255,7 @@ export const FinancialLedger: React.FC = () => {
               type="submit" 
               className="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-100 font-semibold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2"
             >
-              <Plus className="w-4 h-4" /> Post Entry (Debit = Credit)
+              <Plus className="w-4 h-4" /> Post Balanced Entry
             </button>
           </form>
 

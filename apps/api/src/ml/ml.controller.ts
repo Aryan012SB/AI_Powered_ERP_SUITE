@@ -20,7 +20,7 @@ class ForecastRequestDto {
 @Controller('ml/forecast')
 export class MlController {
   @Post('predict')
-  @ApiOperation({ summary: 'Predict demand utilizing Prophet and LSTM model ensembling' })
+  @ApiOperation({ summary: 'Predict demand utilizing OLS Linear Regression' })
   @ApiResponse({ status: 200, description: 'Forecast returned successfully.' })
   @ApiBody({ type: ForecastRequestDto })
   async predictDemand(@Body() body: any) {

@@ -195,42 +195,519 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (!loaded) {
         console.log(`Seeding initial data for tenant: ${activeTenant.id}`);
-        // 1. Transactions
-        const initialTx: Transaction[] = [
-          {
-            id: 'tx-1001',
-            date: '2026-06-15',
-            description: 'Initial Equity Funding',
-            ref: 'JE-001',
-            currency: 'USD',
-            exchangeRate: 1.0,
-            status: 'Posted',
-            debits: [{ account: 'Cash & Cash Equivalents', amount: 500000 }],
-            credits: [{ account: 'Common Stock Capital', amount: 500000 }]
-          },
-          {
-            id: 'tx-1002',
-            date: '2026-06-16',
-            description: 'SaaS Software Subscriptions Expense',
-            ref: 'JE-002',
-            currency: 'USD',
-            exchangeRate: 1.0,
-            status: 'Posted',
-            debits: [{ account: 'IT & Cloud Infrastructure Expense', amount: 15000 }],
-            credits: [{ account: 'Accounts Payable', amount: 15000 }]
-          },
-          {
-            id: 'tx-1003',
-            date: '2026-06-18',
-            description: 'Office Lease Deposit Payment',
-            ref: 'JE-003',
-            currency: 'EUR',
-            exchangeRate: 1.08,
-            status: 'Posted',
-            debits: [{ account: 'Prepaid Expenses', amount: 8000 }],
-            credits: [{ account: 'Cash & Cash Equivalents', amount: 8000 }]
-          }
-        ];
+        
+        let initialTx: Transaction[] = [];
+        let initialInvoices: Invoice[] = [];
+        let initialEmployees: Employee[] = [];
+        let initialInventory: InventoryItem[] = [];
+        let initialPOs: PurchaseOrder[] = [];
+        let initialProjects: ErpProject[] = [];
+        let initialNotifications: NotificationLog[] = [];
+        let initialLeaveRequests: LeaveRequest[] = [];
+
+        if (activeTenant.id === 't-apex') {
+          // Apex Logistics Inc seed data
+          initialTx = [
+            {
+              id: 'tx-2001',
+              date: '2026-06-15',
+              description: 'Apex Equity Launch Capital',
+              ref: 'JE-A01',
+              currency: 'USD',
+              exchangeRate: 1.0,
+              status: 'Posted',
+              debits: [{ account: 'Cash & Cash Equivalents', amount: 800000 }],
+              credits: [{ account: 'Common Stock Capital', amount: 800000 }]
+            },
+            {
+              id: 'tx-2002',
+              date: '2026-06-16',
+              description: 'Fuel Reserves Acquisition',
+              ref: 'JE-A02',
+              currency: 'USD',
+              exchangeRate: 1.0,
+              status: 'Posted',
+              debits: [{ account: 'IT & Cloud Infrastructure Expense', amount: 45000 }],
+              credits: [{ account: 'Accounts Payable', amount: 45000 }]
+            }
+          ];
+
+          initialInvoices = [
+            {
+              id: 'inv-501',
+              vendorName: 'Apex Fuel Distributors',
+              invoiceNumber: 'APX-F-2026',
+              date: '2026-06-10',
+              amount: 25000.00,
+              currency: 'USD',
+              status: 'Match_Success',
+              ocrData: { vendorConfidence: 99.5, amountConfidence: 98.1, dateConfidence: 99.0 },
+              threeWayMatch: { poId: 'PO-401', poMatched: true, receiptId: 'REC-301', receiptMatched: true, priceMatched: true }
+            },
+            {
+              id: 'inv-502',
+              vendorName: 'Fleet Maintenance Corp',
+              invoiceNumber: 'FMC-8930',
+              date: '2026-06-14',
+              amount: 4500.00,
+              currency: 'USD',
+              status: 'Pending',
+              ocrData: { vendorConfidence: 95.0, amountConfidence: 92.4, dateConfidence: 90.1 },
+              threeWayMatch: { poId: 'PO-402', poMatched: true, receiptId: 'REC-302', receiptMatched: false, priceMatched: true }
+            }
+          ];
+
+          initialEmployees = [
+            {
+              id: 'emp-201',
+              name: 'Sarah Jenkins',
+              email: 'sjenkins@apexlogistics.com',
+              role: 'VP Operations & Fleet',
+              department: 'Operations',
+              salary: 125000,
+              leaveBalance: 18,
+              status: 'Active',
+              payrollHistory: []
+            },
+            {
+              id: 'emp-202',
+              name: 'David Miller',
+              email: 'dmiller@apexlogistics.com',
+              role: 'Logistics Lead Dispatcher',
+              department: 'Logistics',
+              salary: 75000,
+              leaveBalance: 15,
+              status: 'Active',
+              payrollHistory: []
+            },
+            {
+              id: 'emp-203',
+              name: 'Jessica Taylor',
+              email: 'jtaylor@apexlogistics.com',
+              role: 'Operations Coordinator',
+              department: 'Operations',
+              salary: 62000,
+              leaveBalance: 20,
+              status: 'Active',
+              payrollHistory: []
+            }
+          ];
+
+          initialInventory = [
+            { id: 'inv-201', name: 'Heavy Duty Semi-Truck Tires', sku: 'TIRE-HD-22', category: 'Hardware', quantity: 80, minStockLevel: 20, reorderQuantity: 50, unitPrice: 350.00, supplier: 'Michelin Corp', status: 'In Stock' },
+            { id: 'inv-202', name: 'GPS Telemetry Asset Trackers', sku: 'GPS-TRACK-V4', category: 'Security', quantity: 15, minStockLevel: 25, reorderQuantity: 50, unitPrice: 120.00, supplier: 'Verizon Connect', status: 'Low Stock' }
+          ];
+
+          initialPOs = [
+            {
+              id: 'PO-401',
+              poNumber: 'PO-2026-A001',
+              vendorName: 'Apex Fuel Distributors',
+              date: '2026-06-01',
+              amount: 25000.00,
+              status: 'Approved',
+              items: [{ name: 'Industrial Fuel Reserves Refill', qty: 1, unitPrice: 25000.00 }]
+            },
+            {
+              id: 'PO-402',
+              poNumber: 'PO-2026-A002',
+              vendorName: 'Fleet Maintenance Corp',
+              date: '2026-06-02',
+              amount: 4500.00,
+              status: 'Sent',
+              items: [{ name: 'Scheduled Truck Fleet Service', qty: 1, unitPrice: 4500.00 }]
+            }
+          ];
+
+          initialProjects = [
+            {
+              id: 'proj-201',
+              name: 'Fleet Routing Optimization System',
+              code: 'PRJ-ROUTE-OPT',
+              manager: 'Sarah Jenkins',
+              budget: 60000,
+              actualCost: 25000,
+              startDate: '2026-06-01',
+              endDate: '2026-07-20',
+              tasks: [
+                { id: 'tsk-201', name: 'Integrate Routing API Engine', assignee: 'Sarah Jenkins', startDate: '2026-06-01', endDate: '2026-06-15', progress: 100, status: 'Done' },
+                { id: 'tsk-202', name: 'Test Real-time Dispatch Map Interface', assignee: 'David Miller', startDate: '2026-06-10', endDate: '2026-06-25', progress: 40, status: 'In Progress' }
+              ]
+            }
+          ];
+
+          initialNotifications = [
+            { id: 'n-201', timestamp: '2026-06-21T13:42:00.000Z', type: 'In-app', recipient: 'admin@apexlogistics.com', message: 'Low inventory alert: GPS Telemetry Asset Trackers below threshold.', status: 'Success', attempts: 1 }
+          ];
+
+          initialLeaveRequests = [
+            {
+              id: 'req-mock-201',
+              empId: 'emp-202',
+              empName: 'David Miller',
+              days: 3,
+              reason: 'Personal Leave',
+              startDate: '2026-07-05',
+              status: 'Pending'
+            }
+          ];
+        } else if (activeTenant.id === 't-google') {
+          // Global Retail Corp seed data
+          initialTx = [
+            {
+              id: 'tx-3001',
+              date: '2026-06-15',
+              description: 'Retail Group Seed Round',
+              ref: 'JE-R01',
+              currency: 'USD',
+              exchangeRate: 1.0,
+              status: 'Posted',
+              debits: [{ account: 'Cash & Cash Equivalents', amount: 1500000 }],
+              credits: [{ account: 'Common Stock Capital', amount: 1500000 }]
+            },
+            {
+              id: 'tx-3002',
+              date: '2026-06-16',
+              description: 'Warehouse Racks Leasing',
+              ref: 'JE-R02',
+              currency: 'USD',
+              exchangeRate: 1.0,
+              status: 'Posted',
+              debits: [{ account: 'IT & Cloud Infrastructure Expense', amount: 28000 }],
+              credits: [{ account: 'Accounts Payable', amount: 28000 }]
+            }
+          ];
+
+          initialInvoices = [
+            {
+              id: 'inv-601',
+              vendorName: 'Office Depot Commerce',
+              invoiceNumber: 'ODP-2026-09',
+              date: '2026-06-10',
+              amount: 7200.00,
+              currency: 'USD',
+              status: 'Match_Success',
+              ocrData: { vendorConfidence: 99.9, amountConfidence: 98.9, dateConfidence: 99.7 },
+              threeWayMatch: { poId: 'PO-501', poMatched: true, receiptId: 'REC-401', receiptMatched: true, priceMatched: true }
+            },
+            {
+              id: 'inv-602',
+              vendorName: 'DHL Express Shipping',
+              invoiceNumber: 'DHL-9872',
+              date: '2026-06-14',
+              amount: 1400.00,
+              currency: 'USD',
+              status: 'Pending',
+              ocrData: { vendorConfidence: 96.1, amountConfidence: 93.5, dateConfidence: 91.2 },
+              threeWayMatch: { poId: 'PO-502', poMatched: true, receiptId: 'REC-402', receiptMatched: false, priceMatched: true }
+            }
+          ];
+
+          initialEmployees = [
+            {
+              id: 'emp-301',
+              name: 'Michael Chen',
+              email: 'mchen@globalretail.com',
+              role: 'Store Operations Director',
+              department: 'Management',
+              salary: 110000,
+              leaveBalance: 24,
+              status: 'Active',
+              payrollHistory: []
+            },
+            {
+              id: 'emp-302',
+              name: 'Amanda Ross',
+              email: 'aross@globalretail.com',
+              role: 'Merchandising Lead Specialist',
+              department: 'Procurement',
+              salary: 68000,
+              leaveBalance: 18,
+              status: 'Active',
+              payrollHistory: []
+            },
+            {
+              id: 'emp-303',
+              name: 'Robert Davis',
+              email: 'rdavis@globalretail.com',
+              role: 'Senior Sales Associate',
+              department: 'Sales',
+              salary: 45000,
+              leaveBalance: 12,
+              status: 'Active',
+              payrollHistory: []
+            }
+          ];
+
+          initialInventory = [
+            { id: 'inv-301', name: 'Wireless Barcode Scanners', sku: 'SCAN-WL-3D', category: 'Hardware', quantity: 120, minStockLevel: 30, reorderQuantity: 60, unitPrice: 150.00, supplier: 'Zebra Tech', status: 'In Stock' },
+            { id: 'inv-302', name: 'Industrial Retail Shelving Racks', sku: 'RACK-IND-H9', category: 'Hardware', quantity: 12, minStockLevel: 15, reorderQuantity: 20, unitPrice: 650.00, supplier: 'Husky Systems', status: 'Low Stock' }
+          ];
+
+          initialPOs = [
+            {
+              id: 'PO-501',
+              poNumber: 'PO-2026-G001',
+              vendorName: 'Office Depot Commerce',
+              date: '2026-06-01',
+              amount: 7200.00,
+              status: 'Approved',
+              items: [{ name: 'Ergonomic Desk chairs and tables', qty: 10, unitPrice: 720.00 }]
+            },
+            {
+              id: 'PO-502',
+              poNumber: 'PO-2026-G002',
+              vendorName: 'DHL Express Shipping',
+              date: '2026-06-02',
+              amount: 1400.00,
+              status: 'Sent',
+              items: [{ name: 'International Courier Freight', qty: 1, unitPrice: 1400.00 }]
+            }
+          ];
+
+          initialProjects = [
+            {
+              id: 'proj-301',
+              name: 'Barcode Scanning System Upgrade',
+              code: 'PRJ-RETAIL-SCAN',
+              manager: 'Michael Chen',
+              budget: 40000,
+              actualCost: 15000,
+              startDate: '2026-06-05',
+              endDate: '2026-07-25',
+              tasks: [
+                { id: 'tsk-301', name: 'Deploy Zebra Scanner Hardware API', assignee: 'Michael Chen', startDate: '2026-06-05', endDate: '2026-06-20', progress: 100, status: 'Done' },
+                { id: 'tsk-302', name: 'Train Floor Associates on scanning', assignee: 'Robert Davis', startDate: '2026-06-15', endDate: '2026-06-30', progress: 50, status: 'In Progress' }
+              ]
+            }
+          ];
+
+          initialNotifications = [
+            { id: 'n-301', timestamp: '2026-06-21T13:42:00.000Z', type: 'In-app', recipient: 'admin@globalretail.com', message: 'Low inventory alert: Shelving Racks below minimum stock limits.', status: 'Success', attempts: 1 }
+          ];
+
+          initialLeaveRequests = [
+            {
+              id: 'req-mock-301',
+              empId: 'emp-303',
+              empName: 'Robert Davis',
+              days: 5,
+              reason: 'Medical Leave',
+              startDate: '2026-07-10',
+              status: 'Pending'
+            }
+          ];
+        } else {
+          // Default (Amdox Technologies) seed data
+          initialTx = [
+            {
+              id: 'tx-1001',
+              date: '2026-06-15',
+              description: 'Initial Equity Funding',
+              ref: 'JE-001',
+              currency: 'USD',
+              exchangeRate: 1.0,
+              status: 'Posted',
+              debits: [{ account: 'Cash & Cash Equivalents', amount: 500000 }],
+              credits: [{ account: 'Common Stock Capital', amount: 500000 }]
+            },
+            {
+              id: 'tx-1002',
+              date: '2026-06-16',
+              description: 'SaaS Software Subscriptions Expense',
+              ref: 'JE-002',
+              currency: 'USD',
+              exchangeRate: 1.0,
+              status: 'Posted',
+              debits: [{ account: 'IT & Cloud Infrastructure Expense', amount: 15000 }],
+              credits: [{ account: 'Accounts Payable', amount: 15000 }]
+            },
+            {
+              id: 'tx-1003',
+              date: '2026-06-18',
+              description: 'Office Lease Deposit Payment',
+              ref: 'JE-003',
+              currency: 'EUR',
+              exchangeRate: 1.08,
+              status: 'Posted',
+              debits: [{ account: 'Prepaid Expenses', amount: 8000 }],
+              credits: [{ account: 'Cash & Cash Equivalents', amount: 8000 }]
+            }
+          ];
+
+          initialInvoices = [
+            {
+              id: 'inv-401',
+              vendorName: 'AWS Enterprise Cloud',
+              invoiceNumber: 'AWS-2026-9872',
+              date: '2026-06-10',
+              amount: 12450.00,
+              currency: 'USD',
+              status: 'Match_Success',
+              ocrData: { vendorConfidence: 99.8, amountConfidence: 98.4, dateConfidence: 99.1 },
+              threeWayMatch: { poId: 'PO-301', poMatched: true, receiptId: 'REC-202', receiptMatched: true, priceMatched: true }
+            },
+            {
+              id: 'inv-402',
+              vendorName: 'Global Office Supplies',
+              invoiceNumber: 'GOS-6512',
+              date: '2026-06-14',
+              amount: 850.00,
+              currency: 'USD',
+              status: 'Pending',
+              ocrData: { vendorConfidence: 94.2, amountConfidence: 91.5, dateConfidence: 89.2 },
+              threeWayMatch: { poId: 'PO-304', poMatched: true, receiptId: 'REC-205', receiptMatched: false, priceMatched: true }
+            },
+            {
+              id: 'inv-403',
+              vendorName: 'Fastrack Courier Logistics',
+              invoiceNumber: 'FCL-778',
+              date: '2026-06-19',
+              amount: 2200.00,
+              currency: 'EUR',
+              status: 'Match_Failed',
+              ocrData: { vendorConfidence: 88.0, amountConfidence: 95.0, dateConfidence: 74.0 },
+              threeWayMatch: { poId: 'PO-302', poMatched: true, receiptId: 'REC-203', receiptMatched: true, priceMatched: false }
+            }
+          ];
+
+          initialEmployees = [
+            {
+              id: 'emp-102',
+              name: 'Himanshu Devatwal',
+              email: 'himanshudevatwal@gmail.com',
+              role: 'Financial Director',
+              department: 'Finance',
+              salary: 155000,
+              leaveBalance: 20,
+              status: 'Active',
+              payrollHistory: [
+                { period: 'May 2026', netPay: 9920, tax: 1950, deductions: 1020, status: 'Processed' }
+              ]
+            },
+            {
+              id: 'emp-103',
+              name: 'Rutvee Bhut',
+              email: 'rutveeb.15@gmail.com',
+              role: 'Supply Chain Specialist',
+              department: 'Procurement',
+              salary: 95000,
+              leaveBalance: 15,
+              status: 'Active',
+              payrollHistory: []
+            },
+            {
+              id: 'emp-104',
+              name: 'Radhey Mohan',
+              email: 'rmpatidar98@gmail.com',
+              role: 'AI / ML Engineer',
+              department: 'R&D',
+              salary: 130000,
+              leaveBalance: 22,
+              status: 'Active',
+              payrollHistory: []
+            },
+            {
+              id: 'emp-105',
+              name: 'Aryan Solanki',
+              email: '112aryansolanki@gmail.com',
+              role: 'AI / ML Engineer',
+              department: 'R&D',
+              salary: 130000,
+              leaveBalance: 22,
+              status: 'Active',
+              payrollHistory: []
+            }
+          ];
+
+          initialInventory = [
+            { id: 'inv-1', name: 'Optic Fiber Transceiver 10G', sku: 'OPT-10G-LR', category: 'Hardware', quantity: 145, minStockLevel: 50, reorderQuantity: 200, unitPrice: 85.00, supplier: 'Cisco Systems', status: 'In Stock' },
+            { id: 'inv-2', name: 'Kubernetes Master Node Servers', sku: 'SRV-DL360-G11', category: 'Servers', quantity: 8, minStockLevel: 10, reorderQuantity: 15, unitPrice: 4200.00, supplier: 'HPE', status: 'Low Stock' },
+            { id: 'inv-3', name: 'Encrypted Hardware Security Module', sku: 'HSM-AES256-Y', category: 'Security', quantity: 0, minStockLevel: 5, reorderQuantity: 10, unitPrice: 8900.00, supplier: 'Yubico', status: 'Out of Stock' },
+            { id: 'inv-4', name: 'Developer Workstations Pro', sku: 'WORK-W11-X86', category: 'Hardware', quantity: 65, minStockLevel: 20, reorderQuantity: 50, unitPrice: 2100.00, supplier: 'Lenovo Inc', status: 'In Stock' }
+          ];
+
+          initialPOs = [
+            {
+              id: 'PO-301',
+              poNumber: 'PO-2026-0001',
+              vendorName: 'AWS Enterprise Cloud',
+              date: '2026-06-01',
+              amount: 12450.00,
+              status: 'Approved',
+              items: [{ name: 'Cloud Infrastructure Hosting', qty: 1, unitPrice: 12450.00 }]
+            },
+            {
+              id: 'PO-302',
+              poNumber: 'PO-2026-0002',
+              vendorName: 'Fastrack Courier Logistics',
+              date: '2026-06-02',
+              amount: 2500.00,
+              status: 'Sent',
+              items: [{ name: 'International Freight Shipping Services', qty: 1, unitPrice: 2500.00 }]
+            },
+            {
+              id: 'PO-304',
+              poNumber: 'PO-2026-0004',
+              vendorName: 'Global Office Supplies',
+              date: '2026-06-12',
+              amount: 850.00,
+              status: 'Delivered',
+              items: [{ name: 'Office Ergonomic Chairs', qty: 2, unitPrice: 425.00 }]
+            }
+          ];
+
+          initialProjects = [
+            {
+              id: 'proj-1',
+              name: 'AI Forecast Module Integration',
+              code: 'PRJ-2026-FCAST',
+              manager: 'Radhey Mohan',
+              budget: 75000,
+              actualCost: 32000,
+              startDate: '2026-06-01',
+              endDate: '2026-07-15',
+              tasks: [
+                { id: 'tsk-101', name: 'Train Prophet Baseline on Historical Sales', assignee: 'Radhey Mohan', startDate: '2026-06-01', endDate: '2026-06-12', progress: 100, status: 'Done' },
+                { id: 'tsk-102', name: 'Build LSTM Recurrent Neural Net for Volatility', assignee: 'Aryan Solanki', startDate: '2026-06-10', endDate: '2026-06-25', progress: 75, status: 'In Progress' },
+                { id: 'tsk-103', name: 'Integrate API Gateway and ML Flow Pipeline', assignee: 'Bitthal Tejra', startDate: '2026-06-20', endDate: '2026-07-10', progress: 10, status: 'Todo' }
+              ]
+            },
+            {
+              id: 'proj-2',
+              name: 'SOC 2 Security Audit Alignment',
+              code: 'PRJ-2026-SOC2',
+              manager: 'Himanshu Devatwal',
+              budget: 120000,
+              actualCost: 95000,
+              startDate: '2026-05-15',
+              endDate: '2026-06-30',
+              tasks: [
+                { id: 'tsk-201', name: 'Setup IAM Rules & Keycloak Multi-Tenant MFA', assignee: 'Himanshu Devatwal', startDate: '2026-05-15', endDate: '2026-05-30', progress: 100, status: 'Done' },
+                { id: 'tsk-202', name: 'Enforce Cryptographic Hash-Chain on Ledger Audit Log', assignee: 'Rutvee Bhut', startDate: '2026-06-01', endDate: '2026-06-18', progress: 100, status: 'Done' },
+                { id: 'tsk-203', name: 'Compile Evidence Portal for auditors', assignee: 'Bitthal Tejra', startDate: '2026-06-15', endDate: '2026-06-30', progress: 40, status: 'In Progress' }
+              ]
+            }
+          ];
+
+          initialNotifications = [
+            { id: 'n-1', timestamp: '2026-06-21T13:42:00.000Z', type: 'In-app', recipient: 'admin@amdox.io', message: 'Low inventory alert: Kubernetes Master Node Servers quantity below threshold.', status: 'Success', attempts: 1 },
+            { id: 'n-2', timestamp: '2026-06-21T13:45:00.000Z', type: 'Email', recipient: 'rmpatidar98@gmail.com', message: 'Assigned new task: Build LSTM Recurrent Neural Net.', status: 'Success', attempts: 1 },
+            { id: 'n-3', timestamp: '2026-06-21T13:48:00.000Z', type: 'Webhook', recipient: 'https://hooks.amdox.io/erp-sync', message: 'Transaction tx-1003 posted to Ledger.', status: 'Success', attempts: 1 }
+          ];
+
+          initialLeaveRequests = [
+            {
+              id: 'req-mock-1',
+              empId: 'emp-103',
+              empName: 'Rutvee Bhut',
+              days: 4,
+              reason: 'Annual Family Vacation',
+              startDate: '2026-07-02',
+              status: 'Pending'
+            }
+          ];
+        }
 
         // Build audit logs from initial transactions
         let chain: AuditLog[] = [];
@@ -242,7 +719,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const timestamp = new Date(tx.date).toISOString();
           const details = `Journal Entry ref: ${tx.ref} of amount ${tx.debits[0].amount} ${tx.currency}`;
           const action = `Post Transaction ${tx.id}`;
-          const block = `${id}|${timestamp}|usr-system|${action}|Finance|${details}|t-amdox|${prevHash}`;
+          const block = `${id}|${timestamp}|usr-system|${action}|Finance|${details}|${activeTenant.id}|${prevHash}`;
           const hash = await computeHash(block);
           
           chain.push({
@@ -252,7 +729,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             action,
             module: 'Finance',
             details,
-            tenantId: 't-amdox',
+            tenantId: activeTenant.id,
             hash,
             prevHash
           });
@@ -261,195 +738,13 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         setTransactions(initialTx);
         setAuditLogs(chain);
-
-        // Invoices
-        const initialInvoices: Invoice[] = [
-          {
-            id: 'inv-401',
-            vendorName: 'AWS Enterprise Cloud',
-            invoiceNumber: 'AWS-2026-9872',
-            date: '2026-06-10',
-            amount: 12450.00,
-            currency: 'USD',
-            status: 'Match_Success',
-            ocrData: { vendorConfidence: 99.8, amountConfidence: 98.4, dateConfidence: 99.1 },
-            threeWayMatch: { poId: 'PO-301', poMatched: true, receiptId: 'REC-202', receiptMatched: true, priceMatched: true }
-          },
-          {
-            id: 'inv-402',
-            vendorName: 'Global Office Supplies',
-            invoiceNumber: 'GOS-6512',
-            date: '2026-06-14',
-            amount: 850.00,
-            currency: 'USD',
-            status: 'Pending',
-            ocrData: { vendorConfidence: 94.2, amountConfidence: 91.5, dateConfidence: 89.2 },
-            threeWayMatch: { poId: 'PO-304', poMatched: true, receiptId: 'REC-205', receiptMatched: false, priceMatched: true }
-          },
-          {
-            id: 'inv-403',
-            vendorName: 'Fastrack Courier Logistics',
-            invoiceNumber: 'FCL-778',
-            date: '2026-06-19',
-            amount: 2200.00,
-            currency: 'EUR',
-            status: 'Match_Failed',
-            ocrData: { vendorConfidence: 88.0, amountConfidence: 95.0, dateConfidence: 74.0 },
-            threeWayMatch: { poId: 'PO-302', poMatched: true, receiptId: 'REC-203', receiptMatched: true, priceMatched: false }
-          }
-        ];
         setInvoices(initialInvoices);
-
-        // Employees
-        const initialEmployees: Employee[] = [
-
-          {
-            id: 'emp-102',
-            name: 'Himanshu Devatwal',
-            email: 'himanshudevatwal@gmail.com',
-            role: 'Financial Director',
-            department: 'Finance',
-            salary: 155000,
-            leaveBalance: 20,
-            status: 'Active',
-            payrollHistory: [
-              { period: 'May 2026', netPay: 9920, tax: 1950, deductions: 1020, status: 'Processed' }
-            ]
-          },
-          {
-            id: 'emp-103',
-            name: 'Rutvee Bhut',
-            email: 'rutveeb.15@gmail.com',
-            role: 'Supply Chain Specialist',
-            department: 'Procurement',
-            salary: 95000,
-            leaveBalance: 15,
-            status: 'Active',
-            payrollHistory: []
-          },
-          {
-            id: 'emp-104',
-            name: 'Radhey Mohan',
-            email: 'rmpatidar98@gmail.com',
-            role: 'AI / ML Engineer',
-            department: 'R&D',
-            salary: 130000,
-            leaveBalance: 22,
-            status: 'Active',
-            payrollHistory: []
-          },
-          {
-            id: 'emp-105',
-            name: 'Aryan Solanki',
-            email: '112aryansolanki@gmail.com',
-            role: 'AI / ML Engineer',
-            department: 'R&D',
-            salary: 130000,
-            leaveBalance: 22,
-            status: 'Active',
-            payrollHistory: []
-          }
-        ];
         setEmployees(initialEmployees);
-
-        // Inventory
-        const initialInventory: InventoryItem[] = [
-          { id: 'inv-1', name: 'Optic Fiber Transceiver 10G', sku: 'OPT-10G-LR', category: 'Hardware', quantity: 145, minStockLevel: 50, reorderQuantity: 200, unitPrice: 85.00, supplier: 'Cisco Systems', status: 'In Stock' },
-          { id: 'inv-2', name: 'Kubernetes Master Node Servers', sku: 'SRV-DL360-G11', category: 'Servers', quantity: 8, minStockLevel: 10, reorderQuantity: 15, unitPrice: 4200.00, supplier: 'HPE', status: 'Low Stock' },
-          { id: 'inv-3', name: 'Encrypted Hardware Security Module', sku: 'HSM-AES256-Y', category: 'Security', quantity: 0, minStockLevel: 5, reorderQuantity: 10, unitPrice: 8900.00, supplier: 'Yubico', status: 'Out of Stock' },
-          { id: 'inv-4', name: 'Developer Workstations Pro', sku: 'WORK-W11-X86', category: 'Hardware', quantity: 65, minStockLevel: 20, reorderQuantity: 50, unitPrice: 2100.00, supplier: 'Lenovo Inc', status: 'In Stock' }
-        ];
         setInventory(initialInventory);
-
-        // Purchase Orders
-        const initialPOs: PurchaseOrder[] = [
-          {
-            id: 'PO-301',
-            poNumber: 'PO-2026-0001',
-            vendorName: 'AWS Enterprise Cloud',
-            date: '2026-06-01',
-            amount: 12450.00,
-            status: 'Approved',
-            items: [{ name: 'Cloud Infrastructure Hosting', qty: 1, unitPrice: 12450.00 }]
-          },
-          {
-            id: 'PO-302',
-            poNumber: 'PO-2026-0002',
-            vendorName: 'Fastrack Courier Logistics',
-            date: '2026-06-02',
-            amount: 2500.00,
-            status: 'Sent',
-            items: [{ name: 'International Freight Shipping Services', qty: 1, unitPrice: 2500.00 }]
-          },
-          {
-            id: 'PO-304',
-            poNumber: 'PO-2026-0004',
-            vendorName: 'Global Office Supplies',
-            date: '2026-06-12',
-            amount: 850.00,
-            status: 'Delivered',
-            items: [{ name: 'Office Ergonomic Chairs', qty: 2, unitPrice: 425.00 }]
-          }
-        ];
         setPurchaseOrders(initialPOs);
-
-        // Projects
-        const initialProjects: ErpProject[] = [
-          {
-            id: 'proj-1',
-            name: 'AI Forecast Module Integration',
-            code: 'PRJ-2026-FCAST',
-            manager: 'Radhey Mohan',
-            budget: 75000,
-            actualCost: 32000,
-            startDate: '2026-06-01',
-            endDate: '2026-07-15',
-            tasks: [
-              { id: 'tsk-101', name: 'Train Prophet Baseline on Historical Sales', assignee: 'Radhey Mohan', startDate: '2026-06-01', endDate: '2026-06-12', progress: 100, status: 'Done' },
-              { id: 'tsk-102', name: 'Build LSTM Recurrent Neural Net for Volatility', assignee: 'Aryan Solanki', startDate: '2026-06-10', endDate: '2026-06-25', progress: 75, status: 'In Progress' },
-              { id: 'tsk-103', name: 'Integrate API Gateway and ML Flow Pipeline', assignee: 'Bitthal Tejra', startDate: '2026-06-20', endDate: '2026-07-10', progress: 10, status: 'Todo' }
-            ]
-          },
-          {
-            id: 'proj-2',
-            name: 'SOC 2 Security Audit Alignment',
-            code: 'PRJ-2026-SOC2',
-            manager: 'Himanshu Devatwal',
-            budget: 120000,
-            actualCost: 95000,
-            startDate: '2026-05-15',
-            endDate: '2026-06-30',
-            tasks: [
-              { id: 'tsk-201', name: 'Setup IAM Rules & Keycloak Multi-Tenant MFA', assignee: 'Himanshu Devatwal', startDate: '2026-05-15', endDate: '2026-05-30', progress: 100, status: 'Done' },
-              { id: 'tsk-202', name: 'Enforce Cryptographic Hash-Chain on Ledger Audit Log', assignee: 'Rutvee Bhut', startDate: '2026-06-01', endDate: '2026-06-18', progress: 100, status: 'Done' },
-              { id: 'tsk-203', name: 'Compile Evidence Portal for auditors', assignee: 'Bitthal Tejra', startDate: '2026-06-15', endDate: '2026-06-30', progress: 40, status: 'In Progress' }
-            ]
-          }
-        ];
         setProjects(initialProjects);
-
-        // Notifications
-        const initialNotifications: NotificationLog[] = [
-          { id: 'n-1', timestamp: '2026-06-21T13:42:00.000Z', type: 'In-app', recipient: 'admin@amdox.io', message: 'Low inventory alert: Kubernetes Master Node Servers quantity below threshold.', status: 'Success', attempts: 1 },
-          { id: 'n-2', timestamp: '2026-06-21T13:45:00.000Z', type: 'Email', recipient: 'rmpatidar98@gmail.com', message: 'Assigned new task: Build LSTM Recurrent Neural Net.', status: 'Success', attempts: 1 },
-          { id: 'n-3', timestamp: '2026-06-21T13:48:00.000Z', type: 'Webhook', recipient: 'https://hooks.amdox.io/erp-sync', message: 'Transaction tx-1003 posted to Ledger.', status: 'Success', attempts: 1 }
-        ];
         setNotifications(initialNotifications);
-
-        const initialLeaveRequests: LeaveRequest[] = [
-          {
-            id: 'req-mock-1',
-            empId: 'emp-103',
-            empName: 'Rutvee Bhut',
-            days: 4,
-            reason: 'Annual Family Vacation',
-            startDate: '2026-07-02',
-            status: 'Pending'
-          }
-        ];
         setLeaveRequests(initialLeaveRequests);
-
-        lastHashRef.current = prevHash;
 
         // Persist seed data to database
         const seededState = {
@@ -503,6 +798,14 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isLoadingRef.current = true;
       setActiveTenant(selected);
       addAuditLog(`Switched Tenant Context`, `Auth`, `Successfully loaded tenant context for ${selected.name}`);
+      
+      // Enforce auth context check:
+      if (currentUser && currentUser.tenantId !== id) {
+        localStorage.removeItem('amx_user');
+        localStorage.removeItem('amx_token');
+        setCurrentUser(null);
+        alert(`Authentication Required: Your active session does not have access to ${selected.name}. Please sign in with an account belonging to this company.`);
+      }
     }
   };
 
