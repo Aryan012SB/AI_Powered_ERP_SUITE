@@ -32,6 +32,8 @@ interface ErpContextProps {
   updateProject: (id: string, updatedFields: Partial<ErpProject>) => Promise<void>;
   addProjectTask: (projId: string, task: Omit<ErpTask, 'id' | 'progress' | 'status'>) => Promise<void>;
   disburseProjectFunds: (projId: string) => Promise<void>;
+  addProject: (project: Omit<ErpProject, 'id' | 'tasks' | 'progress' | 'disbursed'>) => Promise<string>;
+  deleteProject: (id: string) => Promise<void>;
   auditLogs: AuditLog[];
   verifyAuditTrail: () => Promise<boolean>;
   notifications: NotificationLog[];
@@ -1175,6 +1177,26 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await triggerNotification('Email', 'finance-team@amdox.io', `Budget of $${proj.budget.toLocaleString()} for project ${proj.name} has been disbursed`);
   };
 
+  const addProject = async (project: Omit<ErpProject, 'id' | 'tasks' | 'progress' | 'disbursed'>) => {
+    const id = `proj-${Math.floor(100 + Math.random() * 900)}`;
+    const newProj: ErpProject = {
+      ...project,
+      id,
+      progress: 0,
+      disbursed: false,
+      tasks: []
+    };
+    setProjects(prev => [...prev, newProj]);
+    await addAuditLog(`Create Project`, `Projects`, `Created new project "${newProj.name}" (${newProj.code}) with budget $${newProj.budget}`);
+    return id;
+  };
+
+  const deleteProject = async (id: string) => {
+    const proj = projects.find(p => p.id === id);
+    setProjects(prev => prev.filter(p => p.id !== id));
+    await addAuditLog(`Delete Project`, `Projects`, `Deleted project "${proj?.name || id}" (${proj?.code || id})`);
+  };
+
   // Verification of cryptographic integrity of the audit logs
   const verifyAuditTrail = async (): Promise<boolean> => {
     if (auditLogs.length <= 1) return true;
@@ -1382,7 +1404,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       invoices, processOcrInvoice, payInvoice,
       employees, runPayroll, updateLeave, updateEmployee,
       inventory, purchaseOrders, createPO, deliverPO,
-      projects, updateProjectTask, updateProject, addProjectTask, disburseProjectFunds,
+      projects, updateProjectTask, updateProject, addProjectTask, disburseProjectFunds, addProject, deleteProject,
       auditLogs, verifyAuditTrail,
       notifications, triggerNotification,
       apiHistory, logApiCall,

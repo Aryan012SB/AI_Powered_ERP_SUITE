@@ -7,7 +7,7 @@ export const ProjectManager: React.FC = () => {
     projects, updateProjectTask, logApiCall, 
     isAdmin, isManager, isEmployee, currentUser, 
     updateProject, addProjectTask, employees,
-    disburseProjectFunds
+    disburseProjectFunds, addProject, deleteProject
   } = useErp();
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || 'proj-1');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -22,6 +22,15 @@ export const ProjectManager: React.FC = () => {
   const [editProjManager, setEditProjManager] = useState('');
   const [editProjBudget, setEditProjBudget] = useState(0);
   const [editProjCost, setEditProjCost] = useState(0);
+
+  // Add Project State
+  const [isAddingProject, setIsAddingProject] = useState(false);
+  const [newProjName, setNewProjName] = useState('');
+  const [newProjCode, setNewProjCode] = useState('');
+  const [newProjManager, setNewProjManager] = useState('');
+  const [newProjBudget, setNewProjBudget] = useState(0);
+  const [newProjStartDate, setNewProjStartDate] = useState('');
+  const [newProjEndDate, setNewProjEndDate] = useState('');
 
   const toggleAssignee = (name: string) => {
     const list = taskAssignee ? taskAssignee.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -111,16 +120,6 @@ export const ProjectManager: React.FC = () => {
 
   const resourceLoad = getResourceLoad();
 
-  if (projects.length === 0 || !selectedProject) {
-    return (
-      <div className="glass-card p-8 rounded-2xl text-center text-slate-500 flex flex-col justify-center items-center py-20 space-y-3 animate-fade-in">
-        <Briefcase className="w-12 h-12 text-slate-600 animate-pulse" />
-        <h3 className="text-lg font-display font-semibold text-slate-350">Loading Project Workspace...</h3>
-        <p className="text-sm text-slate-500">Establishing database connection and retrieving timeline logs.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 animate-slide-up">
       {/* Header */}
@@ -139,7 +138,7 @@ export const ProjectManager: React.FC = () => {
           <select
             value={selectedProjectId}
             onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 focus:outline-none focus:border-purple-500 appearance-none"
+            className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 focus:outline-none focus:border-purple-500 appearance-none font-sans"
           >
             {projects.map(p => (
               <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
@@ -148,10 +147,19 @@ export const ProjectManager: React.FC = () => {
 
           {!isEmployee && (
             <button
+              onClick={() => setIsAddingProject(true)}
+              className="bg-purple-600 hover:bg-purple-500 text-slate-100 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition"
+            >
+              + Add Project
+            </button>
+          )}
+
+          {!isEmployee && (
+            <button
               onClick={() => handleStartEditProject(selectedProject)}
               className="bg-purple-650/15 hover:bg-purple-600/20 text-purple-300 border border-purple-500/25 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition"
             >
-              Edit Project
+              Edit
             </button>
           )}
 
@@ -161,6 +169,26 @@ export const ProjectManager: React.FC = () => {
               className="bg-emerald-650/15 hover:bg-emerald-650/20 text-emerald-300 border border-emerald-500/25 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition"
             >
               + Add Task
+            </button>
+          )}
+
+          {!isEmployee && (
+            <button
+              onClick={async () => {
+                if (confirm(`Are you sure you want to delete project "${selectedProject.name}" (${selectedProject.code})? This will permanently erase all associated tasks.`)) {
+                  const remaining = projects.filter(p => p.id !== selectedProject.id);
+                  await deleteProject(selectedProject.id);
+                  if (remaining.length > 0) {
+                    setSelectedProjectId(remaining[0].id);
+                  } else {
+                    setSelectedProjectId('');
+                  }
+                  alert("Project deleted successfully.");
+                }
+              }}
+              className="bg-rose-650/15 hover:bg-rose-600/20 text-rose-300 border border-rose-500/25 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition"
+            >
+              Delete Project
             </button>
           )}
         </div>
@@ -287,7 +315,7 @@ export const ProjectManager: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {resourceLoad.map((res, index) => (
+              {resourceLoad.map((res: any, index: number) => (
                 <div key={index} className="bg-slate-950 p-4 rounded-xl border border-slate-900 space-y-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-slate-300 flex items-center gap-1.5">
@@ -636,6 +664,132 @@ export const ProjectManager: React.FC = () => {
               <button 
                 onClick={() => setIsAddingTask(false)}
                 className="bg-slate-855 hover:bg-slate-800 text-slate-330 px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Add Project Modal */}
+      {isAddingProject && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 rounded-2xl border border-slate-800 space-y-4 animate-slide-up">
+            <h3 className="text-lg font-display font-semibold text-slate-200">Create New Project</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Project Name</label>
+                <input 
+                  type="text" 
+                  value={newProjName}
+                  onChange={(e) => setNewProjName(e.target.value)}
+                  placeholder="e.g. Cloud optimization"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Project Code</label>
+                <input 
+                  type="text" 
+                  value={newProjCode}
+                  onChange={(e) => setNewProjCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. PRJ-CLOUD-OPT"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-500 font-mono"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Project Manager</label>
+                <select
+                  value={newProjManager}
+                  onChange={(e) => setNewProjManager(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-350 focus:outline-none"
+                  required
+                >
+                  <option value="">Select Project Manager</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.name}>{emp.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Allocated Budget ($)</label>
+                  <input 
+                    type="number" 
+                    value={newProjBudget}
+                    onChange={(e) => setNewProjBudget(parseInt(e.target.value) || 0)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-500 font-mono"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Start Date</label>
+                  <input 
+                    type="date" 
+                    value={newProjStartDate}
+                    onChange={(e) => setNewProjStartDate(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Due Date / End Date</label>
+                <input 
+                  type="date" 
+                  value={newProjEndDate}
+                  onChange={(e) => setNewProjEndDate(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-900">
+              <button 
+                onClick={async () => {
+                  if (!newProjName || !newProjCode || !newProjManager || !newProjBudget || !newProjStartDate || !newProjEndDate) {
+                    alert("Please fill out all fields.");
+                    return;
+                  }
+                  
+                  const activeId = await addProject({
+                    name: newProjName,
+                    code: newProjCode,
+                    manager: newProjManager,
+                    budget: newProjBudget,
+                    actualCost: 0,
+                    startDate: newProjStartDate,
+                    endDate: newProjEndDate
+                  });
+
+                  setNewProjName('');
+                  setNewProjCode('');
+                  setNewProjManager('');
+                  setNewProjBudget(0);
+                  setNewProjStartDate('');
+                  setNewProjEndDate('');
+                  
+                  setIsAddingProject(false);
+                  setSelectedProjectId(activeId);
+                  
+                  alert("Project created successfully!");
+                }}
+                className="bg-purple-600 hover:bg-purple-500 text-slate-100 font-semibold px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
+              >
+                Create Project
+              </button>
+              
+              <button 
+                onClick={() => setIsAddingProject(false)}
+                className="bg-slate-850 hover:bg-slate-800 text-slate-330 px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
               >
                 Cancel
               </button>
