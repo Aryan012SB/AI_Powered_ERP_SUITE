@@ -14,6 +14,7 @@ export const ProjectManager: React.FC = () => {
   const [taskStatus, setTaskStatus] = useState<'Todo' | 'In Progress' | 'Done'>('In Progress');
 
   // Edit Project Details State
+  const [loadMultiplier, setLoadMultiplier] = useState<number>(35);
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [editProjName, setEditProjName] = useState('');
   const [editProjManager, setEditProjManager] = useState('');
@@ -80,7 +81,7 @@ export const ProjectManager: React.FC = () => {
     return Object.entries(load).map(([name, val]) => ({
       name,
       tasks: val.tasks,
-      loadPercentage: Math.min(val.tasks * 35, 100), // simple simulated load metric
+      loadPercentage: Math.min(val.tasks * loadMultiplier, 100), // dynamic simulated load metric
       avgProgress: Math.round(val.progressAvg / val.tasks)
     }));
   };
@@ -193,7 +194,21 @@ export const ProjectManager: React.FC = () => {
         {/* Resource Allocation List */}
         <div className="glass-card p-6 rounded-2xl lg:col-span-2 flex flex-col justify-between">
           <div>
-            <h3 className="text-sm text-slate-500 uppercase font-bold tracking-wider mb-4">Resource Utilization Load</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm text-slate-500 uppercase font-bold tracking-wider">Resource Utilization Load</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-500 uppercase font-bold">Multiplier:</span>
+                <input 
+                  type="number" 
+                  min={1} 
+                  max={100} 
+                  value={loadMultiplier} 
+                  onChange={(e) => setLoadMultiplier(Math.max(1, Math.min(100, parseInt(e.target.value) || 0)))}
+                  className="bg-slate-900 border border-slate-800 rounded-lg px-2 py-0.5 text-xs text-center w-12 text-purple-400 font-bold focus:outline-none focus:border-purple-500 font-mono" 
+                />
+                <span className="text-[10px] text-slate-500 uppercase font-bold">% / Task</span>
+              </div>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {resourceLoad.map((res, index) => (
