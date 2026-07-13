@@ -28,7 +28,7 @@ interface ErpContextProps {
   createPO: (po: Omit<PurchaseOrder, 'id' | 'status' | 'date'>) => Promise<void>;
   deliverPO: (id: string) => Promise<void>;
   projects: ErpProject[];
-  updateProjectTask: (projId: string, taskId: string, progress: number, status: 'Todo' | 'In Progress' | 'Done') => Promise<void>;
+  updateProjectTask: (projId: string, taskId: string, progress: number, status: 'Todo' | 'In Progress' | 'Done', assignee?: string) => Promise<void>;
   updateProject: (id: string, updatedFields: Partial<ErpProject>) => Promise<void>;
   addProjectTask: (projId: string, task: Omit<ErpTask, 'id' | 'progress' | 'status'>) => Promise<void>;
   auditLogs: AuditLog[];
@@ -1061,13 +1061,17 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await addAuditLog(`PO Delivery Received`, `Supply Chain`, `Marked PO ${id} as fully delivered. Automated inventory adjustments complete.`);
   };
 
-  // Project Management Actions
-  const updateProjectTask = async (projId: string, taskId: string, progress: number, status: 'Todo' | 'In Progress' | 'Done') => {
+  const updateProjectTask = async (projId: string, taskId: string, progress: number, status: 'Todo' | 'In Progress' | 'Done', assignee?: string) => {
     setProjects(prev => prev.map(proj => {
       if (proj.id === projId) {
         const updatedTasks = proj.tasks.map(t => {
           if (t.id === taskId) {
-            return { ...t, progress, status };
+            return { 
+              ...t, 
+              progress, 
+              status, 
+              assignee: assignee !== undefined ? assignee : t.assignee 
+            };
           }
           return t;
         });
@@ -1085,7 +1089,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return proj;
     }));
-    await addAuditLog(`Update Project Task`, `Projects`, `Updated task ${taskId} in project ${projId} to ${progress}% completion`);
+    await addAuditLog(`Update Project Task`, `Projects`, `Updated task ${taskId} in project ${projId} to ${progress}% completion${assignee ? `, reassigned to ${assignee}` : ''}`);
   };
 
   const updateProject = async (id: string, updatedFields: Partial<ErpProject>) => {

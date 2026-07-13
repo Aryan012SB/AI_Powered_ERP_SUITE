@@ -6,12 +6,13 @@ export const ProjectManager: React.FC = () => {
   const { 
     projects, updateProjectTask, logApiCall, 
     isAdmin, isManager, isEmployee, currentUser, 
-    updateProject, addProjectTask 
+    updateProject, addProjectTask, employees
   } = useErp();
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || 'proj-1');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [taskProgress, setTaskProgress] = useState<number>(0);
   const [taskStatus, setTaskStatus] = useState<'Todo' | 'In Progress' | 'Done'>('In Progress');
+  const [taskAssignee, setTaskAssignee] = useState<string>('');
 
   // Edit Project Details State
   const [loadMultiplier, setLoadMultiplier] = useState<number>(35);
@@ -55,7 +56,7 @@ export const ProjectManager: React.FC = () => {
     if (taskProgress === 100) newStatus = 'Done';
     else if (taskProgress > 0 && taskStatus === 'Todo') newStatus = 'In Progress';
 
-    await updateProjectTask(selectedProject.id, activeTaskId, taskProgress, newStatus);
+    await updateProjectTask(selectedProject.id, activeTaskId, taskProgress, newStatus, taskAssignee);
     setActiveTaskId(null);
     logApiCall('PUT', `/api/v1/projects/${selectedProject.id}/tasks/${activeTaskId}`, 200, Math.round(performance.now() - start));
   };
@@ -64,6 +65,7 @@ export const ProjectManager: React.FC = () => {
     setActiveTaskId(task.id);
     setTaskProgress(task.progress);
     setTaskStatus(task.status);
+    setTaskAssignee(task.assignee);
   };
 
   const selectedProject = activeProject || projects[0];
@@ -293,6 +295,22 @@ export const ProjectManager: React.FC = () => {
                     <option value="Todo">Todo</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Done">Done</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Assignee</label>
+                  <select
+                    value={taskAssignee}
+                    onChange={(e) => setTaskAssignee(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-350 focus:outline-none"
+                  >
+                    {Array.from(new Set([
+                      ...employees.map(e => e.name),
+                      taskAssignee
+                    ])).filter(Boolean).map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
