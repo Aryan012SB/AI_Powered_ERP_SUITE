@@ -22,11 +22,28 @@ export const ProjectManager: React.FC = () => {
   const [editProjBudget, setEditProjBudget] = useState(0);
   const [editProjCost, setEditProjCost] = useState(0);
 
+  const toggleAssignee = (name: string) => {
+    const list = taskAssignee ? taskAssignee.split(',').map(s => s.trim()).filter(Boolean) : [];
+    if (list.includes(name)) {
+      setTaskAssignee(list.filter(n => n !== name).join(', '));
+    } else {
+      setTaskAssignee([...list, name].join(', '));
+    }
+  };
+
   // Add Milestone Task State
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [newTaskEndDate, setNewTaskEndDate] = useState('');
+
+  const toggleNewTaskAssignee = (name: string) => {
+    if (newTaskAssignees.includes(name)) {
+      setNewTaskAssignees(newTaskAssignees.filter(n => n !== name));
+    } else {
+      setNewTaskAssignees([...newTaskAssignees, name]);
+    }
+  };
 
   const handleStartEditProject = (proj: any) => {
     setEditProjName(proj.name);
@@ -75,9 +92,12 @@ export const ProjectManager: React.FC = () => {
     const load: Record<string, { tasks: number; progressAvg: number }> = {};
     if (selectedProject) {
       selectedProject.tasks.forEach(t => {
-        if (!load[t.assignee]) load[t.assignee] = { tasks: 0, progressAvg: 0 };
-        load[t.assignee].tasks += 1;
-        load[t.assignee].progressAvg += t.progress;
+        const names = t.assignee ? t.assignee.split(',').map(s => s.trim()).filter(Boolean) : [];
+        names.forEach(name => {
+          if (!load[name]) load[name] = { tasks: 0, progressAvg: 0 };
+          load[name].tasks += 1;
+          load[name].progressAvg += t.progress;
+        });
       });
     }
     return Object.entries(load).map(([name, val]) => ({
@@ -299,19 +319,23 @@ export const ProjectManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Assignee</label>
-                  <select
-                    value={taskAssignee}
-                    onChange={(e) => setTaskAssignee(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-350 focus:outline-none"
-                  >
-                    {Array.from(new Set([
-                      ...employees.map(e => e.name),
-                      taskAssignee
-                    ])).filter(Boolean).map((name) => (
-                      <option key={name} value={name}>{name}</option>
-                    ))}
-                  </select>
+                  <label className="text-[10px] text-slate-500 block uppercase font-bold mb-2">Assignees</label>
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 max-h-40 overflow-y-auto space-y-2.5">
+                    {employees.map((emp) => {
+                      const isAssigned = (taskAssignee ? taskAssignee.split(',').map(s => s.trim()).filter(Boolean) : []).includes(emp.name);
+                      return (
+                        <label key={emp.id} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={isAssigned}
+                            onChange={() => toggleAssignee(emp.name)}
+                            className="rounded border-slate-700 bg-slate-955 text-purple-600 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                          />
+                          <span>{emp.name} ({emp.role})</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -410,13 +434,17 @@ export const ProjectManager: React.FC = () => {
 
               <div>
                 <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Project Manager</label>
-                <input 
-                  type="text" 
+                <select
                   value={editProjManager}
                   onChange={(e) => setEditProjManager(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-550"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-350 focus:outline-none"
                   required
-                />
+                >
+                  <option value="">Select Project Manager</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.name}>{emp.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3.5">
@@ -496,15 +524,23 @@ export const ProjectManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Assignee</label>
-                <input 
-                  type="text" 
-                  value={newTaskAssignee}
-                  onChange={(e) => setNewTaskAssignee(e.target.value)}
-                  placeholder="e.g. Himanshu Devatwal"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
-                  required
-                />
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-2">Assignees</label>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 max-h-40 overflow-y-auto space-y-2.5">
+                  {employees.map((emp) => {
+                    const isAssigned = newTaskAssignees.includes(emp.name);
+                    return (
+                      <label key={emp.id} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={isAssigned}
+                          onChange={() => toggleNewTaskAssignee(emp.name)}
+                          className="rounded border-slate-700 bg-slate-955 text-purple-600 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                        />
+                        <span>{emp.name} ({emp.role})</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
@@ -522,18 +558,18 @@ export const ProjectManager: React.FC = () => {
             <div className="flex items-center gap-3 pt-4 border-t border-slate-900">
               <button 
                 onClick={async () => {
-                  if (!newTaskName || !newTaskAssignee || !newTaskEndDate) {
-                    alert("Please fill out all fields.");
+                  if (!newTaskName || newTaskAssignees.length === 0 || !newTaskEndDate) {
+                    alert("Please fill out all fields (and select at least one assignee).");
                     return;
                   }
                   await addProjectTask(selectedProject.id, {
                     name: newTaskName,
-                    assignee: newTaskAssignee,
+                    assignee: newTaskAssignees.join(', '),
                     startDate: new Date().toISOString().split('T')[0],
                     endDate: newTaskEndDate
                   });
                   setNewTaskName('');
-                  setNewTaskAssignee('');
+                  setNewTaskAssignees([]);
                   setNewTaskEndDate('');
                   setIsAddingTask(false);
                   alert("Milestone task added successfully!");
