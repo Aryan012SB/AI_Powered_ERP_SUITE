@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 import { AuthService } from './auth.service';
@@ -67,8 +67,8 @@ export class AuthController {
   @Get('users')
   @ApiOperation({ summary: 'Get list of all registered users' })
   @ApiResponse({ status: 200, description: 'Success: returns user list.' })
-  async getAllUsers() {
-    return this.authService.getAllUsers();
+  async getAllUsers(@Query('tenantId') tenantId?: string) {
+    return this.authService.getAllUsers(tenantId);
   }
 
   @Post('users')

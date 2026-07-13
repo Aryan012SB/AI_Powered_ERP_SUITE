@@ -65,7 +65,13 @@ export class AuthService {
     };
   }
 
-  async getAllUsers(): Promise<Omit<User, 'password'>[]> {
+  async getAllUsers(tenantId?: string): Promise<Omit<User, 'password'>[]> {
+    if (tenantId) {
+      return this.dbService.query<Omit<User, 'password'>>(
+        'SELECT name, email, tenantId FROM users WHERE tenantId = ?',
+        [tenantId]
+      );
+    }
     return this.dbService.query<Omit<User, 'password'>>('SELECT name, email, tenantId FROM users');
   }
 

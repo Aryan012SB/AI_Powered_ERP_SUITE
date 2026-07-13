@@ -1307,13 +1307,16 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [usersList, setUsersList] = useState<{ name: string; email: string; tenantId: string }[]>([]);
 
   const fetchUsersList = async () => {
+    if (!currentUser) return;
     const start = performance.now();
     try {
-      const response = await fetch(`${getApiUrl()}/api/v1/auth/users`);
+      const response = await fetch(`${getApiUrl()}/api/v1/auth/users?tenantId=${currentUser.tenantId}`);
       if (response.ok) {
         const data = await response.json();
-        setUsersList(data);
-        logApiCall('GET', '/api/v1/auth/users', 200, Math.round(performance.now() - start));
+        // Client-side dual-layer filtering to guarantee absolute tenant isolation
+        const filtered = data.filter((u: any) => u.tenantId === currentUser.tenantId);
+        setUsersList(filtered);
+        logApiCall('GET', `/api/v1/auth/users?tenantId=${currentUser.tenantId}`, 200, Math.round(performance.now() - start));
       }
     } catch (err) {
       console.error('Failed to fetch users list:', err);
