@@ -18,7 +18,7 @@ import { AuthForm } from './AuthForm';
 
 import { 
   Building2, BarChart2, Coins, FileText, Users, 
-  Package, Brain, Briefcase, ShieldAlert, Bell, Network,
+  Package, Brain, Briefcase, ShieldAlert, Bell,
   Wifi, WifiOff, ShieldCheck, Shield, ChevronDown, LogOut
 } from 'lucide-react';
 
@@ -44,7 +44,6 @@ export const DashboardLayout: React.FC = () => {
     { id: 'projects', name: 'Project Tracking', icon: <Briefcase className="w-4 h-4" /> },
     { id: 'audit', name: 'Audit & Compliance', icon: <ShieldAlert className="w-4 h-4" /> },
     { id: 'notify', name: 'Notification logs', icon: <Bell className="w-4 h-4" /> },
-    { id: 'gateway', name: 'API Gateway', icon: <Network className="w-4 h-4" /> },
     { id: 'auth', name: 'Identity & MFA', icon: <Shield className="w-4 h-4" /> },
   ];
 
