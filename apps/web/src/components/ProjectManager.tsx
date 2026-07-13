@@ -6,7 +6,8 @@ export const ProjectManager: React.FC = () => {
   const { 
     projects, updateProjectTask, logApiCall, 
     isAdmin, isManager, isEmployee, currentUser, 
-    updateProject, addProjectTask, employees
+    updateProject, addProjectTask, employees,
+    disburseProjectFunds
   } = useErp();
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || 'proj-1');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -167,49 +168,102 @@ export const ProjectManager: React.FC = () => {
 
       {/* Project Financials & Resource Load */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Budget Progress Card */}
+        {/* Budget & Project Progress Card */}
         <div className="glass-card p-6 rounded-2xl lg:col-span-1 flex flex-col justify-between">
-          <div className="space-y-4">
-            <h3 className="text-sm text-slate-500 uppercase font-bold tracking-wider">Budget Utilization</h3>
-            
-            {selectedProject && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <div>
+          <div className="space-y-6">
+            {/* Project Overall Progress */}
+            <div className="space-y-3">
+              <h3 className="text-sm text-slate-500 uppercase font-bold tracking-wider">Project Completion</h3>
+              {selectedProject && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-end">
                     <span className="text-2xl font-bold font-display text-slate-200">
-                      ${selectedProject.actualCost.toLocaleString()}
+                      {selectedProject.progress || 0}%
                     </span>
-                    <span className="text-[10px] text-slate-500 block">Actual Cost Incurred</span>
+                    <span className="text-[10px] text-slate-500 block font-mono">Tasks: {selectedProject.tasks.length} Total</span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-sm font-semibold text-slate-450 block">
-                      Budget: ${selectedProject.budget.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] text-slate-500 block">Total Allocated</span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div>
                   <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-850">
                     <div 
+                      className="h-full rounded-full bg-purple-500"
+                      style={{ width: `${selectedProject.progress || 0}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Budget Progress */}
+            <div className="space-y-3 pt-4 border-t border-slate-900">
+              <h3 className="text-sm text-slate-500 uppercase font-bold tracking-wider">Budget Utilization</h3>
+              {selectedProject && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <span className="text-lg font-bold text-slate-200">
+                        ${selectedProject.actualCost.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-slate-500 block">Actual Cost</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-semibold text-slate-405 block">
+                        Budget: ${selectedProject.budget.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-slate-500 block">Allocated</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-slate-850">
+                    <div 
                       className={`h-full rounded-full ${
-                        (selectedProject.actualCost / selectedProject.budget) > 0.85 ? 'bg-rose-500' : 'bg-purple-500'
+                        (selectedProject.actualCost / selectedProject.budget) > 0.85 ? 'bg-rose-500' : 'bg-purple-650'
                       }`}
                       style={{ width: `${(selectedProject.actualCost / selectedProject.budget) * 100}%` }}
                     />
                   </div>
-                  <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
+                  <div className="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
                     <span>Used: {Math.round((selectedProject.actualCost / selectedProject.budget) * 100)}%</span>
                     <span>Remaining: ${((selectedProject.budget - selectedProject.actualCost)).toLocaleString()}</span>
                   </div>
                 </div>
+              )}
+            </div>
+            
+            {/* Amount Disbursement Section */}
+            {selectedProject && (
+              <div className="space-y-3 pt-4 border-t border-slate-900">
+                <h3 className="text-sm text-slate-500 uppercase font-bold tracking-wider">Financial Disbursement</h3>
+                {selectedProject.progress === 100 ? (
+                  selectedProject.disbursed ? (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-3.5 rounded-xl text-center flex flex-col items-center justify-center gap-1">
+                      <span className="text-emerald-400 text-xs font-bold font-mono">FUNDS DISBURSED SECURELY</span>
+                      <span className="text-[9px] text-slate-500">Posted to general ledger under JE-PROJ-{selectedProject.code}</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 text-center animate-pulse">
+                      <p className="text-[10px] text-slate-400">Project is 100% completed. You can now disburse funds to ledger.</p>
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Are you sure you want to disburse $${selectedProject.budget.toLocaleString()} for project "${selectedProject.name}"?`)) {
+                            await disburseProjectFunds(selectedProject.id);
+                          }
+                        }}
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-100 font-semibold py-2 rounded-xl text-xs transition shadow-lg shadow-emerald-600/15 cursor-pointer"
+                      >
+                        Disburse Project Funds
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <div className="bg-slate-950 border border-slate-900 p-3 rounded-xl text-center">
+                    <span className="text-[10px] text-slate-550 block uppercase font-semibold">Disbursement Locked</span>
+                    <span className="text-[9px] text-slate-550 block mt-1">Complete all project tasks (100% progress) to unlock disbursement.</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           <div className="text-[10px] text-slate-500 mt-6 pt-4 border-t border-slate-900">
-            Resource expenses are accrued dynamically via HR Payroll entries.
+            Project completions automatically prompt accounting ledger releases.
           </div>
         </div>
 

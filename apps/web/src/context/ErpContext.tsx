@@ -31,6 +31,7 @@ interface ErpContextProps {
   updateProjectTask: (projId: string, taskId: string, progress: number, status: 'Todo' | 'In Progress' | 'Done', assignee?: string) => Promise<void>;
   updateProject: (id: string, updatedFields: Partial<ErpProject>) => Promise<void>;
   addProjectTask: (projId: string, task: Omit<ErpTask, 'id' | 'progress' | 'status'>) => Promise<void>;
+  disburseProjectFunds: (projId: string) => Promise<void>;
   auditLogs: AuditLog[];
   verifyAuditTrail: () => Promise<boolean>;
   notifications: NotificationLog[];
@@ -329,6 +330,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               actualCost: 25000,
               startDate: '2026-06-01',
               endDate: '2026-07-20',
+              progress: 70,
+              disbursed: false,
               tasks: [
                 { id: 'tsk-201', name: 'Integrate Routing API Engine', assignee: 'Sarah Jenkins', startDate: '2026-06-01', endDate: '2026-06-15', progress: 100, status: 'Done' },
                 { id: 'tsk-202', name: 'Test Real-time Dispatch Map Interface', assignee: 'David Miller', startDate: '2026-06-10', endDate: '2026-06-25', progress: 40, status: 'In Progress' }
@@ -475,6 +478,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               actualCost: 15000,
               startDate: '2026-06-05',
               endDate: '2026-07-25',
+              progress: 75,
+              disbursed: false,
               tasks: [
                 { id: 'tsk-301', name: 'Deploy Zebra Scanner Hardware API', assignee: 'Michael Chen', startDate: '2026-06-05', endDate: '2026-06-20', progress: 100, status: 'Done' },
                 { id: 'tsk-302', name: 'Train Floor Associates on scanning', assignee: 'Robert Davis', startDate: '2026-06-15', endDate: '2026-06-30', progress: 50, status: 'In Progress' }
@@ -667,6 +672,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               actualCost: 32000,
               startDate: '2026-06-01',
               endDate: '2026-07-15',
+              progress: 62,
+              disbursed: false,
               tasks: [
                 { id: 'tsk-101', name: 'Train Prophet Baseline on Historical Sales', assignee: 'Radhey Mohan', startDate: '2026-06-01', endDate: '2026-06-12', progress: 100, status: 'Done' },
                 { id: 'tsk-102', name: 'Build LSTM Recurrent Neural Net for Volatility', assignee: 'Aryan Solanki', startDate: '2026-06-10', endDate: '2026-06-25', progress: 75, status: 'In Progress' },
@@ -682,6 +689,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               actualCost: 95000,
               startDate: '2026-05-15',
               endDate: '2026-06-30',
+              progress: 80,
+              disbursed: false,
               tasks: [
                 { id: 'tsk-201', name: 'Setup IAM Rules & Keycloak Multi-Tenant MFA', assignee: 'Himanshu Devatwal', startDate: '2026-05-15', endDate: '2026-05-30', progress: 100, status: 'Done' },
                 { id: 'tsk-202', name: 'Enforce Cryptographic Hash-Chain on Ledger Audit Log', assignee: 'Rutvee Bhut', startDate: '2026-06-01', endDate: '2026-06-18', progress: 100, status: 'Done' },
@@ -1129,6 +1138,43 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await addAuditLog(`Add Project Task`, `Projects`, `Added task "${task.name}" assigned to ${task.assignee}`);
   };
 
+  const disburseProjectFunds = async (projId: string) => {
+    const proj = projects.find(p => p.id === projId);
+    if (!proj) {
+      alert("Error: Project not found.");
+      return;
+    }
+    if (proj.progress !== 100) {
+      alert("Error: Cannot disburse funds. Project progress must be 100%.");
+      return;
+    }
+    if (proj.disbursed) {
+      alert("Error: Budget has already been disbursed for this project.");
+      return;
+    }
+
+    // Add general ledger double-entry transaction
+    await addTransaction({
+      description: `Project Budget Disbursement: ${proj.name} (${proj.code})`,
+      ref: `JE-PROJ-${proj.code}`,
+      currency: 'USD',
+      exchangeRate: 1.0,
+      debits: [{ account: 'IT & Cloud Infrastructure Expense', amount: proj.budget }],
+      credits: [{ account: 'Cash & Cash Equivalents', amount: proj.budget }]
+    });
+
+    // Update disbursed status in the state
+    setProjects(prev => prev.map(p => {
+      if (p.id === projId) {
+        return { ...p, disbursed: true };
+      }
+      return p;
+    }));
+
+    await addAuditLog(`Disburse Project Funds`, `Projects`, `Disbursed project budget of $${proj.budget.toLocaleString()} for project ${proj.name} to General Ledger`);
+    await triggerNotification('Email', 'finance-team@amdox.io', `Budget of $${proj.budget.toLocaleString()} for project ${proj.name} has been disbursed`);
+  };
+
   // Verification of cryptographic integrity of the audit logs
   const verifyAuditTrail = async (): Promise<boolean> => {
     if (auditLogs.length <= 1) return true;
@@ -1336,7 +1382,7 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       invoices, processOcrInvoice, payInvoice,
       employees, runPayroll, updateLeave, updateEmployee,
       inventory, purchaseOrders, createPO, deliverPO,
-      projects, updateProjectTask, updateProject, addProjectTask,
+      projects, updateProjectTask, updateProject, addProjectTask, disburseProjectFunds,
       auditLogs, verifyAuditTrail,
       notifications, triggerNotification,
       apiHistory, logApiCall,

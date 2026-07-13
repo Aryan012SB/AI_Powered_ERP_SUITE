@@ -118,6 +118,8 @@ export interface ErpProject {
   startDate: string;
   endDate: string;
   tasks: ErpTask[];
+  progress: number;
+  disbursed?: boolean;
 }
 
 export interface NotificationLog {
