@@ -46,6 +46,7 @@ export const ProjectManager: React.FC = () => {
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [newTaskEndDate, setNewTaskEndDate] = useState('');
+  const [newTaskCost, setNewTaskCost] = useState<number>(0);
 
   const toggleNewTaskAssignee = (name: string) => {
     if (newTaskAssignees.includes(name)) {
@@ -457,7 +458,7 @@ export const ProjectManager: React.FC = () => {
                 <div className="flex justify-between items-center text-xs">
                   <div className="space-y-0.5">
                     <span className="font-semibold text-slate-250 block">{task.name}</span>
-                    <span className="text-[10px] text-slate-500 font-mono">Assignee: {task.assignee} | Ends: {task.endDate}</span>
+                    <span className="text-[10px] text-slate-500 font-mono">Assignee: {task.assignee} | Ends: {task.endDate} | Cost: ${task.cost?.toLocaleString() || '0'}</span>
                   </div>
                   
                   <div className="flex items-center gap-3">
@@ -635,6 +636,18 @@ export const ProjectManager: React.FC = () => {
                   required
                 />
               </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 block uppercase font-bold mb-1">Task Cost ($)</label>
+                <input 
+                  type="number" 
+                  value={newTaskCost || ''}
+                  onChange={(e) => setNewTaskCost(Math.max(0, parseInt(e.target.value) || 0))}
+                  placeholder="e.g. 5000"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-mono"
+                  required
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-3 pt-4 border-t border-slate-900">
@@ -648,11 +661,13 @@ export const ProjectManager: React.FC = () => {
                     name: newTaskName,
                     assignee: newTaskAssignees.join(', '),
                     startDate: new Date().toISOString().split('T')[0],
-                    endDate: newTaskEndDate
+                    endDate: newTaskEndDate,
+                    cost: newTaskCost
                   });
                   setNewTaskName('');
                   setNewTaskAssignees([]);
                   setNewTaskEndDate('');
+                  setNewTaskCost(0);
                   setIsAddingTask(false);
                   alert("Milestone task added successfully!");
                 }}
@@ -662,7 +677,13 @@ export const ProjectManager: React.FC = () => {
               </button>
               
               <button 
-                onClick={() => setIsAddingTask(false)}
+                onClick={() => {
+                  setNewTaskName('');
+                  setNewTaskAssignees([]);
+                  setNewTaskEndDate('');
+                  setNewTaskCost(0);
+                  setIsAddingTask(false);
+                }}
                 className="bg-slate-855 hover:bg-slate-800 text-slate-330 px-4 py-2.5 rounded-xl text-xs cursor-pointer transition"
               >
                 Cancel

@@ -106,6 +106,7 @@ export interface ErpTask {
   endDate: string;
   progress: number; // 0-100
   status: 'Todo' | 'In Progress' | 'Done';
+  cost: number;
 }
 
 export interface ErpProject {

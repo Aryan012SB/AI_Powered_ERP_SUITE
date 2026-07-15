@@ -335,8 +335,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               progress: 70,
               disbursed: false,
               tasks: [
-                { id: 'tsk-201', name: 'Integrate Routing API Engine', assignee: 'Sarah Jenkins', startDate: '2026-06-01', endDate: '2026-06-15', progress: 100, status: 'Done' },
-                { id: 'tsk-202', name: 'Test Real-time Dispatch Map Interface', assignee: 'David Miller', startDate: '2026-06-10', endDate: '2026-06-25', progress: 40, status: 'In Progress' }
+                { id: 'tsk-201', name: 'Integrate Routing API Engine', assignee: 'Sarah Jenkins', startDate: '2026-06-01', endDate: '2026-06-15', progress: 100, status: 'Done', cost: 15000 },
+                { id: 'tsk-202', name: 'Test Real-time Dispatch Map Interface', assignee: 'David Miller', startDate: '2026-06-10', endDate: '2026-06-25', progress: 40, status: 'In Progress', cost: 10000 }
               ]
             }
           ];
@@ -483,8 +483,8 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               progress: 75,
               disbursed: false,
               tasks: [
-                { id: 'tsk-301', name: 'Deploy Zebra Scanner Hardware API', assignee: 'Michael Chen', startDate: '2026-06-05', endDate: '2026-06-20', progress: 100, status: 'Done' },
-                { id: 'tsk-302', name: 'Train Floor Associates on scanning', assignee: 'Robert Davis', startDate: '2026-06-15', endDate: '2026-06-30', progress: 50, status: 'In Progress' }
+                { id: 'tsk-301', name: 'Deploy Zebra Scanner Hardware API', assignee: 'Michael Chen', startDate: '2026-06-05', endDate: '2026-06-20', progress: 100, status: 'Done', cost: 10000 },
+                { id: 'tsk-302', name: 'Train Floor Associates on scanning', assignee: 'Robert Davis', startDate: '2026-06-15', endDate: '2026-06-30', progress: 50, status: 'In Progress', cost: 5000 }
               ]
             }
           ];
@@ -677,9 +677,9 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               progress: 62,
               disbursed: false,
               tasks: [
-                { id: 'tsk-101', name: 'Train Prophet Baseline on Historical Sales', assignee: 'Radhey Mohan', startDate: '2026-06-01', endDate: '2026-06-12', progress: 100, status: 'Done' },
-                { id: 'tsk-102', name: 'Build LSTM Recurrent Neural Net for Volatility', assignee: 'Aryan Solanki', startDate: '2026-06-10', endDate: '2026-06-25', progress: 75, status: 'In Progress' },
-                { id: 'tsk-103', name: 'Integrate API Gateway and ML Flow Pipeline', assignee: 'Bitthal Tejra', startDate: '2026-06-20', endDate: '2026-07-10', progress: 10, status: 'Todo' }
+                { id: 'tsk-101', name: 'Train Prophet Baseline on Historical Sales', assignee: 'Radhey Mohan', startDate: '2026-06-01', endDate: '2026-06-12', progress: 100, status: 'Done', cost: 15000 },
+                { id: 'tsk-102', name: 'Build LSTM Recurrent Neural Net for Volatility', assignee: 'Aryan Solanki', startDate: '2026-06-10', endDate: '2026-06-25', progress: 75, status: 'In Progress', cost: 12000 },
+                { id: 'tsk-103', name: 'Integrate API Gateway and ML Flow Pipeline', assignee: 'Bitthal Tejra', startDate: '2026-06-20', endDate: '2026-07-10', progress: 10, status: 'Todo', cost: 5000 }
               ]
             },
             {
@@ -694,9 +694,9 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               progress: 80,
               disbursed: false,
               tasks: [
-                { id: 'tsk-201', name: 'Setup IAM Rules & Keycloak Multi-Tenant MFA', assignee: 'Himanshu Devatwal', startDate: '2026-05-15', endDate: '2026-05-30', progress: 100, status: 'Done' },
-                { id: 'tsk-202', name: 'Enforce Cryptographic Hash-Chain on Ledger Audit Log', assignee: 'Rutvee Bhut', startDate: '2026-06-01', endDate: '2026-06-18', progress: 100, status: 'Done' },
-                { id: 'tsk-203', name: 'Compile Evidence Portal for auditors', assignee: 'Bitthal Tejra', startDate: '2026-06-15', endDate: '2026-06-30', progress: 40, status: 'In Progress' }
+                { id: 'tsk-201', name: 'Setup IAM Rules & Keycloak Multi-Tenant MFA', assignee: 'Himanshu Devatwal', startDate: '2026-05-15', endDate: '2026-05-30', progress: 100, status: 'Done', cost: 40000 },
+                { id: 'tsk-202', name: 'Enforce Cryptographic Hash-Chain on Ledger Audit Log', assignee: 'Rutvee Bhut', startDate: '2026-06-01', endDate: '2026-06-18', progress: 100, status: 'Done', cost: 35000 },
+                { id: 'tsk-203', name: 'Compile Evidence Portal for auditors', assignee: 'Bitthal Tejra', startDate: '2026-06-15', endDate: '2026-06-30', progress: 40, status: 'In Progress', cost: 20000 }
               ]
             }
           ];
@@ -1132,12 +1132,13 @@ export const ErpProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ...proj,
           progress: totalProgress,
+          actualCost: proj.actualCost + task.cost,
           tasks: updatedTasks
         };
       }
       return proj;
     }));
-    await addAuditLog(`Add Project Task`, `Projects`, `Added task "${task.name}" assigned to ${task.assignee}`);
+    await addAuditLog(`Add Project Task`, `Projects`, `Added task "${task.name}" assigned to ${task.assignee} with cost $${task.cost}`);
   };
 
   const disburseProjectFunds = async (projId: string) => {
